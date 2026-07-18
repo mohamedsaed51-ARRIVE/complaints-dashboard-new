@@ -1,0 +1,3480 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARRIVE | لوحة متابعة الشكاوى</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23182633'/%3E%3Cpath d='M14 40 L32 16 L50 40' stroke='%23A9832E' stroke-width='6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M22 40 L32 27 L42 40' stroke='%23F3F1E9' stroke-width='5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@500;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#F5F4EF;
+    --surface:#FFFFFF;
+    --surface-alt:#FBFAF6;
+    --ink:#1E2536;
+    --ink-soft:#5B6478;
+    --ink-faint:#8E96A6;
+    --line:#E3E0D5;
+    --line-strong:#CFCBBC;
+    --navy:#2C4257;
+    --navy-deep:#182633;
+    --gold:#A9832E;
+    --accepted:#3F7D58;
+    --accepted-bg:#E9F2EB;
+    --rejected:#B5473F;
+    --rejected-bg:#F7EAE8;
+    --pending:#C08A2E;
+    --pending-bg:#FAF1DF;
+    --neutral:#6C7488;
+    --neutral-bg:#EEEDE6;
+    --shadow: 0 1px 2px rgba(24,38,51,0.04), 0 4px 14px rgba(24,38,51,0.05);
+    --health-green:#3F7D58; --health-yellow:#C08A2E; --health-orange:#C4622A; --health-red:#B5473F;
+  }
+  :root[data-theme="dark"]{
+    --bg:#12161F;
+    --surface:#1B212C;
+    --surface-alt:#20273348;
+    --surface-alt:#212836;
+    --ink:#E7E7E2;
+    --ink-soft:#AEB4C2;
+    --ink-faint:#7C8494;
+    --line:#2B3241;
+    --line-strong:#3A4356;
+    --navy:#7C97AE;
+    --navy-deep:#EDEBE0;
+    --shadow: 0 1px 2px rgba(0,0,0,0.25), 0 4px 18px rgba(0,0,0,0.35);
+  }
+  html{ transition: background-color .25s ease; }
+  body{ transition: background-color .25s ease, color .25s ease; }
+  .panel, .stub, .table-panel, .filter-bar, .modal, .alert-card, .health-panel, .insights-panel, .exec-summary-panel, .exec-stat-card, .exec-compare-card, .exec-reco-item, .control-bar{
+    transition: background-color .25s ease, border-color .25s ease, box-shadow .25s ease;
+  }
+  /* chart canvases stay legible regardless of theme, per requirement */
+  .chart-wrap{ background:#fff; border-radius:8px; }
+
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'IBM Plex Sans Arabic', 'Tajawal', sans-serif;
+    font-size:14px;
+    line-height:1.5;
+    min-height:100vh;
+    background-image:
+      radial-gradient(circle at 100% 0%, rgba(44,66,87,0.04), transparent 45%),
+      radial-gradient(circle at 0% 100%, rgba(169,131,46,0.05), transparent 40%);
+  }
+  .num{ font-family:'IBM Plex Mono', monospace; direction:ltr; unicode-bidi:isolate; }
+
+  ::selection{ background:var(--navy); color:#fff; }
+
+  /* ---------- Header ---------- */
+  header.top{
+    background: linear-gradient(180deg, var(--navy-deep) 0%, var(--navy) 100%);
+    color:#F3F1E9;
+    padding:26px 40px 22px;
+    position:relative;
+    overflow:hidden;
+  }
+  header.top::before{
+    content:"";
+    position:absolute; inset:0;
+    background-image: repeating-linear-gradient(90deg, rgba(255,255,255,0.035) 0 1px, transparent 1px 34px);
+    pointer-events:none;
+  }
+  .top-row{ display:flex; align-items:flex-end; justify-content:space-between; gap:24px; flex-wrap:wrap; position:relative; z-index:1;}
+  .brand-eyebrow{
+    font-family:'IBM Plex Mono', monospace; direction:ltr; unicode-bidi:isolate;
+    font-size:11px; letter-spacing:.14em; color:#C9BE9E; text-transform:uppercase; margin-bottom:6px; display:block;
+  }
+  h1.title{
+    font-family:'Tajawal', sans-serif; font-weight:800; font-size:30px; letter-spacing:.2px; color:#fff;
+  }
+  .subtitle{ color:#B9C3CE; font-size:13.5px; margin-top:6px; }
+  .top-meta{ display:flex; gap:26px; flex-wrap:wrap; }
+  .top-meta .meta-item{ text-align:left; }
+  .top-meta .meta-item .v{ font-family:'IBM Plex Mono',monospace; font-size:20px; font-weight:600; color:#fff; direction:ltr; }
+  .top-meta .meta-item .l{ font-size:11px; color:#AEB9C6; margin-top:2px; }
+
+  /* ---------- Filter bar ---------- */
+  .filter-bar{
+    position:sticky; top:0; z-index:40;
+    background:var(--surface);
+    border-bottom:1px solid var(--line);
+    box-shadow: var(--shadow);
+    padding:14px 40px;
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  }
+  .filter-bar .fgroup{ display:flex; flex-direction:column; gap:4px; }
+  .filter-bar label{ font-size:10.5px; color:var(--ink-faint); letter-spacing:.03em; }
+  .filter-bar select, .filter-bar input[type=text]{
+    appearance:none;
+    background:var(--surface-alt);
+    border:1px solid var(--line-strong);
+    border-radius:7px;
+    padding:8px 12px;
+    font-family:inherit;
+    font-size:13px;
+    color:var(--ink);
+    min-width:130px;
+    cursor:pointer;
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  .filter-bar input[type=text]{ cursor:text; min-width:200px; }
+  .filter-bar select:hover, .filter-bar input[type=text]:hover{ border-color:var(--navy); }
+  .filter-bar select:focus, .filter-bar input[type=text]:focus{
+    outline:none; border-color:var(--navy); box-shadow:0 0 0 3px rgba(44,66,87,0.12);
+  }
+  .filter-spacer{ flex:1; }
+  .filter-divider{ flex-basis:100%; height:1px; background:var(--line); margin:2px 0 4px; }
+  .filter-bar input[type=date]{
+    appearance:none;
+    background:var(--surface-alt);
+    border:1px solid var(--line-strong);
+    border-radius:7px;
+    padding:7px 10px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12.5px;
+    color:var(--ink);
+    min-width:140px;
+    cursor:pointer;
+    direction:ltr;
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  .filter-bar input[type=date]:hover{ border-color:var(--navy); }
+  .filter-bar input[type=date]:focus{ outline:none; border-color:var(--navy); box-shadow:0 0 0 3px rgba(44,66,87,0.12); }
+  .btn-reset{
+    background:transparent; border:1px solid var(--line-strong); border-radius:7px;
+    padding:8px 16px; font-size:12.5px; color:var(--ink-soft); cursor:pointer; font-family:inherit;
+    transition:.15s ease;
+    align-self:flex-end;
+  }
+  .btn-reset:hover{ border-color:var(--rejected); color:var(--rejected); }
+  .result-count{ font-size:12px; color:var(--ink-faint); align-self:flex-end; padding-bottom:9px; white-space:nowrap; }
+  .result-count b{ color:var(--navy); font-family:'IBM Plex Mono',monospace; }
+
+  main{ padding:30px 40px 60px; max-width:1440px; margin:0 auto; }
+
+  /* ---------- KPI waybill stubs (signature element) ---------- */
+  .kpi-row{
+    display:grid;
+    grid-template-columns:repeat(5, 1fr);
+    gap:16px;
+    margin-bottom:30px;
+  }
+  .stub{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:10px;
+    position:relative;
+    padding:16px 16px 14px;
+    box-shadow:var(--shadow);
+    overflow:hidden;
+  }
+  .stub::after{ /* perforation notch on the right (leading) edge, RTL so it's the start edge */
+    content:"";
+    position:absolute; top:0; right:-1px; bottom:0; width:0;
+    border-right:2px dashed var(--line-strong);
+  }
+  .stub .barcode{
+    position:absolute; top:14px; left:14px; display:flex; gap:1.5px; align-items:flex-end; height:20px; opacity:.5;
+  }
+  .stub .barcode i{ display:block; width:2px; background:var(--ink-faint); }
+  .stub .stub-label{
+    font-size:10.5px; color:var(--ink-faint); letter-spacing:.05em; margin-bottom:8px; padding-left:60px;
+  }
+  .stub .stub-value{
+    font-family:'IBM Plex Mono', monospace; direction:ltr; unicode-bidi:isolate;
+    font-size:28px; font-weight:600; color:var(--navy-deep); line-height:1;
+  }
+  .stub .stub-value sup{ font-size:14px; font-weight:500; color:var(--ink-faint); margin-right:3px;}
+  .stub .stub-sub{ font-size:11px; color:var(--ink-soft); margin-top:7px; }
+  .stub.accent-gold .stub-value{ color:var(--gold); }
+  .stub.accent-accepted .stub-value{ color:var(--accepted); }
+  .stub.accent-rejected .stub-value{ color:var(--rejected); }
+  .stub.accent-pending .stub-value{ color:var(--pending); }
+
+  /* ---------- Panels / charts ---------- */
+  .panel-grid{
+    display:grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap:16px;
+    margin-bottom:16px;
+  }
+  .panel-grid.thirds{ grid-template-columns: 1fr 1fr 1fr; }
+  .panel{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:18px 20px 14px;
+    box-shadow:var(--shadow);
+  }
+  .panel h3{
+    font-family:'Tajawal',sans-serif; font-weight:700; font-size:15px; color:var(--navy-deep);
+    margin-bottom:2px;
+  }
+  .panel .panel-sub{ font-size:11.5px; color:var(--ink-faint); margin-bottom:12px; }
+  .chart-wrap{ position:relative; height:250px; }
+  .chart-wrap.tall{ height:300px; }
+
+  /* ---------- Table ---------- */
+  .table-panel{
+    background:var(--surface); border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow); overflow:hidden;
+  }
+  .table-head-bar{
+    display:flex; justify-content:space-between; align-items:center; padding:16px 20px 12px; border-bottom:1px solid var(--line);
+  }
+  .table-scroll{ overflow-x:auto; max-height:640px; overflow-y:auto; }
+  table{ width:100%; border-collapse:collapse; font-size:12.8px; }
+  thead th{
+    position:sticky; top:0; z-index:5;
+    background:var(--surface-alt);
+    text-align:right;
+    padding:10px 14px;
+    font-size:11px; letter-spacing:.03em; color:var(--ink-soft); font-weight:600;
+    border-bottom:1px solid var(--line-strong);
+    cursor:pointer;
+    white-space:nowrap;
+    user-select:none;
+  }
+  thead th:hover{ color:var(--navy); }
+  thead th .arrow{ opacity:.4; font-size:9px; margin-left:3px; }
+  tbody tr{ border-bottom:1px solid var(--line); transition:background .1s ease; cursor:pointer; }
+  tbody tr:hover{ background:var(--surface-alt); }
+  tbody td{ padding:10px 14px; color:var(--ink); vertical-align:top; }
+  td.id-cell{ font-family:'IBM Plex Mono',monospace; color:var(--ink-faint); direction:ltr; text-align:right; }
+  td.content-cell{ max-width:320px; color:var(--ink-soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  td.amount-cell{ font-family:'IBM Plex Mono',monospace; direction:ltr; text-align:right; color:var(--navy-deep); font-weight:600;}
+
+  .badge{
+    display:inline-block; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; white-space:nowrap;
+  }
+  .badge.accepted{ background:var(--accepted-bg); color:var(--accepted); }
+  .badge.rejected{ background:var(--rejected-bg); color:var(--rejected); }
+  .badge.pending{ background:var(--pending-bg); color:var(--pending); }
+  .badge.neutral{ background:var(--neutral-bg); color:var(--neutral); }
+
+  .empty-row td{ text-align:center; padding:48px 20px; color:var(--ink-faint); font-size:13px; }
+
+  /* ---------- Detail modal ---------- */
+  .overlay{
+    position:fixed; inset:0; background:rgba(24,38,51,0.45); backdrop-filter:blur(2px);
+    display:none; align-items:center; justify-content:center; z-index:100; padding:24px;
+  }
+  .overlay.open{ display:flex; }
+  /* Settings modal must always render above the loading skeleton (z-index:500) so it's
+     never accidentally obscured while the initial data load is in progress. */
+  #settingsOverlay{ z-index:600; }
+  .modal{
+    background:var(--surface); border-radius:12px; max-width:620px; width:100%; max-height:82vh; overflow-y:auto;
+    box-shadow:0 20px 60px rgba(24,38,51,0.3);
+    position:relative;
+  }
+  .modal-head{
+    padding:20px 24px 14px; border-bottom:1px solid var(--line);
+    display:flex; justify-content:space-between; align-items:flex-start; gap:12px;
+  }
+  .modal-head .mid{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--ink-faint); direction:ltr; }
+  .modal-head h2{ font-family:'Tajawal',sans-serif; font-size:18px; margin-top:4px; color:var(--navy-deep); }
+  .modal-close{ background:none; border:none; font-size:20px; color:var(--ink-faint); cursor:pointer; line-height:1; padding:4px; }
+  .modal-close:hover{ color:var(--rejected); }
+  .modal-body{ padding:18px 24px 24px; display:grid; grid-template-columns:1fr 1fr; gap:14px 20px; }
+  .modal-body .field{ grid-column: span 1; }
+  .modal-body .field.full{ grid-column:1 / -1; }
+  .modal-body .field .l{ font-size:10.5px; color:var(--ink-faint); margin-bottom:3px; letter-spacing:.03em; }
+  .modal-body .field .v{ font-size:13px; color:var(--ink); }
+
+  footer{ text-align:center; padding:24px; font-size:11px; color:var(--ink-faint); }
+
+  @media (max-width: 1100px){
+    .kpi-row{ grid-template-columns:repeat(2,1fr); }
+    .panel-grid, .panel-grid.thirds{ grid-template-columns:1fr; }
+    header.top, .filter-bar, main{ padding-left:18px; padding-right:18px; }
+    .modal-body{ grid-template-columns:1fr; }
+  }
+
+  :focus-visible{ outline:2px solid var(--navy); outline-offset:2px; }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ transition:none !important; scroll-behavior:auto !important; }
+  }
+
+  /* ======================================================
+     ENTERPRISE ADD-ONS
+     ====================================================== */
+
+  /* ---- Header dark-mode toggle ---- */
+  .theme-toggle{
+    position:relative; z-index:1;
+    display:inline-flex; align-items:center; gap:8px;
+    background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18);
+    color:#F3F1E9; border-radius:20px; padding:6px 12px; font-size:11.5px; cursor:pointer;
+    font-family:inherit; margin-top:10px; transition:.15s ease;
+  }
+  .theme-toggle:hover{ background:rgba(255,255,255,0.16); }
+
+  /* ---- Control bar (live stats + quick actions) ---- */
+  .control-bar{
+    background:var(--surface); border-bottom:1px solid var(--line);
+    padding:9px 40px; display:flex; align-items:center; gap:22px; flex-wrap:wrap;
+    font-size:11.5px; color:var(--ink-soft); position:sticky; top:0; z-index:39; box-shadow:var(--shadow);
+  }
+  .live-stats{ display:flex; align-items:center; gap:18px; flex-wrap:wrap; }
+  .live-stats .ls-item{ display:flex; align-items:center; gap:5px; white-space:nowrap; }
+  .live-stats .ls-item .ls-l{ color:var(--ink-faint); }
+  .live-stats .ls-item .ls-v{ font-family:'IBM Plex Mono',monospace; direction:ltr; unicode-bidi:isolate; color:var(--navy-deep); font-weight:600; }
+  .live-dot{ width:7px; height:7px; border-radius:50%; background:var(--accepted); display:inline-block; box-shadow:0 0 0 3px var(--accepted-bg); animation:pulseDot 2s infinite; }
+  @keyframes pulseDot{ 0%,100%{opacity:1;} 50%{opacity:.35;} }
+  .qa-spacer{ flex:1; }
+  .quick-actions{ display:flex; gap:8px; flex-wrap:wrap; }
+  .qa-btn{
+    display:inline-flex; align-items:center; gap:6px;
+    background:var(--surface-alt); border:1px solid var(--line-strong); border-radius:7px;
+    padding:6px 12px; font-size:11.5px; color:var(--ink); cursor:pointer; font-family:inherit; transition:.15s ease;
+  }
+  .qa-btn:hover{ border-color:var(--navy); color:var(--navy); background:var(--surface); }
+  .qa-btn .qa-icon{ font-size:13px; line-height:1; }
+  .active-alert-chip{
+    display:inline-flex; align-items:center; gap:8px; background:var(--pending-bg); color:var(--pending);
+    border-radius:20px; padding:5px 12px; font-size:11.5px; font-weight:600;
+  }
+  .active-alert-chip button{ background:none; border:none; color:inherit; cursor:pointer; font-size:13px; line-height:1; padding:0; }
+
+  /* ---- Section heading shared style ---- */
+  .section-heading{ display:flex; align-items:baseline; justify-content:space-between; margin:34px 0 14px; gap:12px; flex-wrap:wrap; }
+  .section-heading h2{ font-family:'Tajawal',sans-serif; font-weight:800; font-size:17px; color:var(--navy-deep); display:flex; align-items:center; gap:9px; }
+  .section-heading h2 .tag{
+    font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.08em; color:#fff; background:var(--navy);
+    border-radius:5px; padding:2px 7px; text-transform:uppercase;
+  }
+  .section-heading .section-sub{ font-size:11.5px; color:var(--ink-faint); }
+
+  /* ---- Alert Center ---- */
+  .alert-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(260px,1fr)); gap:12px; margin-bottom:8px; }
+  .alert-card{
+    background:var(--surface); border:1px solid var(--line); border-right:4px solid var(--neutral);
+    border-radius:10px; padding:13px 16px; box-shadow:var(--shadow); cursor:pointer; text-align:right;
+    display:flex; flex-direction:column; gap:6px; transition:.15s ease;
+  }
+  .alert-card:hover{ transform:translateY(-1px); box-shadow:0 6px 20px rgba(24,38,51,0.1); }
+  .alert-card.crit{ border-right-color:var(--rejected); }
+  .alert-card.high{ border-right-color:var(--pending); }
+  .alert-card.med{ border-right-color:var(--gold); }
+  .alert-card.low{ border-right-color:var(--accepted); }
+  .alert-top{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .alert-emoji{ font-size:15px; line-height:1; }
+  .alert-priority{
+    font-size:9.5px; letter-spacing:.06em; font-weight:700; text-transform:uppercase; border-radius:5px; padding:2px 7px;
+  }
+  .alert-priority.crit{ background:var(--rejected-bg); color:var(--rejected); }
+  .alert-priority.high{ background:var(--pending-bg); color:var(--pending); }
+  .alert-priority.med{ background:var(--pending-bg); color:var(--gold); }
+  .alert-priority.low{ background:var(--accepted-bg); color:var(--accepted); }
+  .alert-desc{ font-size:12.5px; color:var(--ink); line-height:1.45; }
+  .alert-bottom{ display:flex; align-items:baseline; justify-content:space-between; margin-top:2px; }
+  .alert-count{ font-family:'IBM Plex Mono',monospace; direction:ltr; font-size:20px; font-weight:700; color:var(--navy-deep); }
+  .alert-cta{ font-size:10.5px; color:var(--navy); }
+  .alert-empty{ padding:20px; text-align:center; color:var(--ink-faint); font-size:12.5px; background:var(--surface); border:1px dashed var(--line-strong); border-radius:10px; }
+
+  /* ---- Executive Insights ---- */
+  .insights-panel{
+    background:var(--surface); border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow);
+    padding:18px 20px; display:flex; flex-direction:column; gap:10px;
+  }
+  .insight-row{ display:flex; gap:10px; align-items:flex-start; font-size:13px; color:var(--ink); line-height:1.6; }
+  .insight-row .bullet{ color:var(--gold); font-size:16px; line-height:1.3; flex-shrink:0; }
+  .insight-row b{ color:var(--navy-deep); font-family:'IBM Plex Mono',monospace; direction:ltr; unicode-bidi:isolate; }
+
+  /* ---- Executive Summary panel ---- */
+  .exec-summary-panel{
+    background:var(--surface); border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow);
+    padding:20px; display:flex; flex-direction:column; gap:20px;
+  }
+  .exec-summary-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(190px,1fr)); gap:12px; }
+  .exec-stat-card{
+    background:var(--surface-alt); border:1px solid var(--line); border-right:3px solid var(--navy);
+    border-radius:9px; padding:12px 14px; display:flex; flex-direction:column; gap:5px;
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .exec-stat-card:hover{ transform:translateY(-1px); box-shadow:0 6px 16px rgba(24,38,51,0.08); }
+  .exec-stat-card.tone-gold{ border-right-color:var(--gold); }
+  .exec-stat-card.tone-accept{ border-right-color:var(--accepted); }
+  .exec-stat-card.tone-reject{ border-right-color:var(--rejected); }
+  .exec-stat-card.tone-pending{ border-right-color:var(--pending); }
+  .exec-stat-label{ display:flex; align-items:center; gap:6px; font-size:10.5px; color:var(--ink-faint); font-weight:600; letter-spacing:.02em; }
+  .exec-stat-icon{ font-size:12px; }
+  .exec-stat-value{ font-family:'IBM Plex Mono',monospace; direction:ltr; unicode-bidi:isolate; font-size:19px; font-weight:700; color:var(--navy-deep); line-height:1.2; }
+  .exec-stat-sub{ font-size:11px; color:var(--ink-soft); line-height:1.4; }
+
+  .exec-summary-subgrid{ display:grid; grid-template-columns:1.3fr 1fr; gap:20px; }
+  @media (max-width: 900px){ .exec-summary-subgrid{ grid-template-columns:1fr; } }
+  .exec-subheading{ font-family:'Tajawal',sans-serif; font-weight:700; font-size:12.5px; color:var(--navy-deep); margin-bottom:10px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .exec-rule-tag{ font-family:'IBM Plex Sans Arabic',sans-serif; font-weight:500; font-size:10px; color:var(--ink-faint); background:var(--neutral-bg); border-radius:12px; padding:2px 9px; }
+
+  .exec-compare-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  @media (max-width: 480px){ .exec-compare-grid{ grid-template-columns:1fr; } }
+  .exec-compare-card{ background:var(--surface-alt); border:1px solid var(--line); border-radius:9px; padding:11px 13px; }
+  .exec-compare-title{ font-size:11px; color:var(--ink-faint); font-weight:600; margin-bottom:6px; }
+  .exec-compare-row{ display:flex; align-items:baseline; justify-content:space-between; gap:8px; }
+  .exec-compare-num{ font-family:'IBM Plex Mono',monospace; direction:ltr; unicode-bidi:isolate; font-size:16px; font-weight:700; color:var(--navy-deep); }
+  .exec-compare-delta{ font-family:'IBM Plex Mono',monospace; direction:ltr; unicode-bidi:isolate; font-size:11px; font-weight:700; border-radius:11px; padding:2px 8px; }
+  .exec-compare-delta.up-bad{ background:var(--rejected-bg); color:var(--rejected); }
+  .exec-compare-delta.up-good{ background:var(--accepted-bg); color:var(--accepted); }
+  .exec-compare-delta.down-bad{ background:var(--rejected-bg); color:var(--rejected); }
+  .exec-compare-delta.down-good{ background:var(--accepted-bg); color:var(--accepted); }
+  .exec-compare-delta.flat{ background:var(--neutral-bg); color:var(--neutral); }
+  .exec-compare-caption{ font-size:10.5px; color:var(--ink-faint); margin-top:5px; }
+
+  .exec-reasons-list{ display:flex; flex-direction:column; gap:7px; }
+  .exec-reason-row{ display:flex; align-items:center; gap:9px; }
+  .exec-reason-name{ font-size:12px; color:var(--ink); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .exec-reason-bar-track{ flex:1.4; height:6px; border-radius:4px; background:var(--neutral-bg); overflow:hidden; }
+  .exec-reason-bar-fill{ height:100%; border-radius:4px; background:linear-gradient(90deg, var(--gold), var(--navy)); }
+  .exec-reason-pct{ font-family:'IBM Plex Mono',monospace; direction:ltr; unicode-bidi:isolate; font-size:11px; color:var(--ink-soft); width:34px; text-align:left; flex-shrink:0; }
+
+  .exec-reco-block{ border-top:1px dashed var(--line-strong); padding-top:16px; }
+  .exec-reco-list{ display:flex; flex-direction:column; gap:8px; }
+  .exec-reco-item{
+    display:flex; gap:9px; align-items:flex-start; font-size:12.5px; color:var(--ink); line-height:1.55;
+    background:var(--surface-alt); border:1px solid var(--line); border-radius:8px; padding:9px 12px;
+  }
+  .exec-reco-item .reco-icon{ flex-shrink:0; font-size:13px; }
+  .exec-reco-item b{ color:var(--navy-deep); font-family:'IBM Plex Mono',monospace; direction:ltr; unicode-bidi:isolate; }
+  .exec-reco-empty{ font-size:12.5px; color:var(--ink-faint); padding:6px 2px; }
+
+  /* ---- Core Executive Summary strip (top of dashboard) ---- */
+  .exec-core-panel{
+    background:var(--surface); border:1px solid var(--line); border-radius:12px;
+    padding:18px 20px; box-shadow:var(--shadow); margin-bottom:22px;
+  }
+  .exec-core-grid{ display:grid; grid-template-columns:repeat(9, 1fr); gap:12px; }
+  @media (max-width:1400px){ .exec-core-grid{ grid-template-columns:repeat(5,1fr); } }
+  @media (max-width:1200px){ .exec-core-grid{ grid-template-columns:repeat(4,1fr); } }
+  @media (max-width:640px){ .exec-core-grid{ grid-template-columns:repeat(2,1fr); } }
+  .exec-core-card{
+    background:var(--surface-alt); border:1px solid var(--line); border-right:3px solid var(--navy);
+    border-radius:9px; padding:11px 12px;
+  }
+  .exec-core-card.tone-accept{ border-right-color:var(--accepted); }
+  .exec-core-card.tone-reject{ border-right-color:var(--rejected); }
+  .exec-core-card.tone-pending{ border-right-color:var(--pending); }
+  .exec-core-card.tone-gold{ border-right-color:var(--gold); }
+  .exec-core-label{ font-size:10px; color:var(--ink-faint); font-weight:600; letter-spacing:.02em; margin-bottom:6px; }
+  .exec-core-value{ font-family:'IBM Plex Mono',monospace; direction:ltr; unicode-bidi:isolate; font-size:20px; font-weight:700; color:var(--navy-deep); line-height:1.15; }
+  .exec-core-value sup{ font-size:11px; font-weight:600; color:var(--ink-faint); margin-right:2px; }
+
+  /* ---- Smart Insight cards ---- */
+  .insight-cards-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(220px,1fr)); gap:12px; margin-bottom:14px; }
+  .insight-card{
+    background:var(--surface-alt); border:1px solid var(--line); border-right:3px solid var(--gold);
+    border-radius:9px; padding:12px 13px;
+  }
+  .insight-card-label{ display:flex; align-items:center; gap:6px; font-size:10.5px; color:var(--ink-faint); font-weight:600; margin-bottom:6px; }
+  .insight-card-value{ font-size:13.5px; font-weight:700; color:var(--navy-deep); margin-bottom:3px; word-break:break-word; }
+  .insight-card-sub{ font-size:11px; color:var(--ink-soft); line-height:1.4; }
+  .insight-bullets{ display:flex; flex-direction:column; gap:9px; padding-top:4px; border-top:1px dashed var(--line-strong); }
+
+  /* ---- Top Performers ---- */
+  .top-performers-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+  @media (max-width:1100px){ .top-performers-grid{ grid-template-columns:repeat(2,1fr); } }
+  @media (max-width:600px){ .top-performers-grid{ grid-template-columns:1fr; } }
+  .tp-card{ background:var(--surface); border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow); padding:14px 15px; }
+  .tp-card h5{ font-size:12px; font-weight:700; color:var(--navy-deep); margin-bottom:10px; display:flex; align-items:center; gap:6px; }
+  .tp-row{ display:flex; align-items:center; gap:8px; padding:5px 0; border-bottom:1px solid var(--line); font-size:12px; }
+  .tp-row:last-child{ border-bottom:none; }
+  .tp-rank{ font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--ink-faint); width:16px; flex-shrink:0; }
+  .tp-name{ flex:1; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .tp-val{ font-family:'IBM Plex Mono',monospace; direction:ltr; unicode-bidi:isolate; font-size:11.5px; font-weight:700; color:var(--navy-deep); flex-shrink:0; }
+  .tp-empty{ font-size:12px; color:var(--ink-faint); padding:6px 0; }
+
+  /* ---- KPI enhancement: target / achievement / trend / sparkline ---- */
+  .stub-enh{ margin-top:10px; padding-top:9px; border-top:1px dashed var(--line-strong); }
+  .stub-enh-row{ display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:6px; }
+  .stub-target{ font-size:10px; color:var(--ink-faint); }
+  .stub-target b{ color:var(--ink-soft); font-family:'IBM Plex Mono',monospace; direction:ltr; unicode-bidi:isolate; }
+  .stub-trend{ font-family:'IBM Plex Mono',monospace; font-size:10.5px; font-weight:700; border-radius:10px; padding:1px 7px; direction:ltr; unicode-bidi:isolate; }
+  .stub-trend.up{ background:var(--accepted-bg); color:var(--accepted); }
+  .stub-trend.down{ background:var(--rejected-bg); color:var(--rejected); }
+  .stub-trend.flat{ background:var(--neutral-bg); color:var(--neutral); }
+  .stub-achieve-track{ height:5px; border-radius:3px; background:var(--neutral-bg); overflow:hidden; margin-bottom:6px; }
+  .stub-achieve-fill{ height:100%; border-radius:3px; background:var(--navy); }
+  .stub-achieve-fill.good{ background:var(--accepted); }
+  .stub-achieve-fill.bad{ background:var(--rejected); }
+  .stub-spark{ display:block; width:100%; height:24px; }
+
+  /* ---- Complaint Handler Performance Index ---- */
+  .health-panel{ background:var(--surface); border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow); overflow:hidden; }
+  .health-table-wrap{ overflow-x:auto; max-height:420px; overflow-y:auto; }
+  table.health-table{ width:100%; border-collapse:collapse; font-size:12.6px; }
+  table.health-table thead th{
+    position:sticky; top:0; background:var(--surface-alt); text-align:right; padding:10px 14px; font-size:11px;
+    color:var(--ink-soft); font-weight:600; border-bottom:1px solid var(--line-strong); cursor:pointer; white-space:nowrap;
+  }
+  table.health-table thead th:hover{ color:var(--navy); }
+  table.health-table tbody tr{ border-bottom:1px solid var(--line); cursor:pointer; }
+  table.health-table tbody tr:hover{ background:var(--surface-alt); }
+  table.health-table td{ padding:9px 14px; vertical-align:middle; color:var(--ink); }
+  .health-score-cell{ display:flex; align-items:center; gap:9px; }
+  .health-dot{ width:11px; height:11px; border-radius:50%; flex-shrink:0; }
+  .health-score-num{ font-family:'IBM Plex Mono',monospace; font-weight:700; direction:ltr; }
+  .health-bar-track{ background:var(--neutral-bg); border-radius:20px; height:6px; width:90px; overflow:hidden; }
+  .health-bar-fill{ height:100%; border-radius:20px; }
+  .health-badge{ font-size:10.5px; font-weight:700; padding:2px 9px; border-radius:20px; }
+  .health-trend{ font-family:'IBM Plex Mono',monospace; font-weight:700; direction:ltr; }
+  .health-trend.up{ color:var(--health-green); }
+  .health-trend.down{ color:var(--health-red); }
+  .health-trend.flat{ color:var(--ink-faint); }
+
+  /* ---- Smart tooltip ---- */
+  #smartTooltip{
+    position:fixed; z-index:200; max-width:270px; background:var(--navy-deep); color:#F5F4EF;
+    border-radius:9px; padding:11px 13px; font-size:11.5px; line-height:1.6; box-shadow:0 10px 30px rgba(0,0,0,0.25);
+    pointer-events:none; opacity:0; transform:translateY(4px); transition:opacity .12s ease, transform .12s ease;
+  }
+  #smartTooltip.show{ opacity:1; transform:translateY(0); }
+  #smartTooltip .tt-row{ display:flex; justify-content:space-between; gap:10px; margin-bottom:3px; }
+  #smartTooltip .tt-label{ color:#C9BE9E; }
+  #smartTooltip .tt-val{ font-family:'IBM Plex Mono',monospace; direction:ltr; }
+  #smartTooltip .tt-note{ margin-top:6px; padding-top:6px; border-top:1px solid rgba(255,255,255,0.15); color:#D7DBE3; }
+  .stub, .panel h3{ cursor:help; }
+
+  /* ---- Skeleton loading ---- */
+  #pageSkeleton{
+    position:fixed; inset:0; z-index:500; background:var(--bg); padding:30px 40px; overflow:hidden;
+    display:flex; flex-direction:column; gap:16px; transition:opacity .35s ease, visibility .35s ease;
+  }
+  #pageSkeleton.hidden{ opacity:0; visibility:hidden; pointer-events:none; }
+  .sk-row{ display:grid; grid-template-columns:repeat(5,1fr); gap:16px; }
+  .sk-block{
+    background:linear-gradient(90deg, var(--surface-alt) 25%, var(--line) 37%, var(--surface-alt) 63%);
+    background-size:400% 100%; animation:skShimmer 1.4s ease infinite; border-radius:10px;
+  }
+  @keyframes skShimmer{ 0%{background-position:100% 50%;} 100%{background-position:0 50%;} }
+  .sk-kpi{ height:96px; }
+  .sk-chart{ height:250px; }
+  .sk-charts-row{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .sk-table{ height:260px; }
+
+  /* ---- Non-blocking demo-mode banner (shown when no API URL is configured) ---- */
+  .demo-mode-banner{
+    display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap;
+    background:#FCEFC7; color:#7a5b06; border-bottom:1px solid #E9C46A;
+    padding:8px 16px; font-size:12.5px; text-align:center;
+  }
+  .demo-mode-banner.hidden{ display:none; }
+  .demo-mode-banner .dmb-settings-btn{
+    background:#7a5b06; color:#fff; border:none; border-radius:6px; padding:4px 10px;
+    font-size:11.5px; cursor:pointer; font-family:inherit; white-space:nowrap;
+  }
+  .demo-mode-banner .dmb-settings-btn:hover{ opacity:.85; }
+
+  /* ---- Slim background-refresh problem banner ---- */
+  .refresh-banner{
+    position:fixed; left:50%; bottom:22px; transform:translateX(-50%);
+    z-index:150; background:var(--navy-deep); color:#F3F1E9; border-radius:10px;
+    padding:10px 16px; display:flex; align-items:center; gap:10px; font-size:12.5px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.25); max-width:90vw; transition:opacity .2s ease, visibility .2s ease;
+  }
+  .refresh-banner.hidden{ opacity:0; visibility:hidden; pointer-events:none; }
+  .refresh-banner-msg{ color:#D7DBE3; }
+  .refresh-banner-btn{
+    background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.25); color:#fff;
+    border-radius:7px; padding:5px 10px; font-size:11.5px; cursor:pointer; font-family:inherit; white-space:nowrap;
+  }
+  .refresh-banner-btn:hover{ background:rgba(255,255,255,0.2); }
+
+  /* ---- Settings modal ---- */
+  .settings-modal{ max-width:480px; }
+  .settings-body{ padding:20px 24px 26px; display:flex; flex-direction:column; gap:8px; }
+  .settings-label{ font-size:11.5px; color:var(--ink-faint); letter-spacing:.03em; }
+  .settings-input{
+    background:var(--surface-alt); border:1px solid var(--line-strong); border-radius:8px;
+    padding:10px 12px; font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:var(--ink);
+  }
+  .settings-input:focus{ outline:none; border-color:var(--navy); box-shadow:0 0 0 3px rgba(44,66,87,0.12); }
+  .settings-hint{ font-size:11.5px; color:var(--ink-faint); line-height:1.6; margin:2px 0 10px; }
+  .settings-warning{
+    display:none; align-items:flex-start; gap:8px; font-size:12px; line-height:1.6;
+    background:rgba(196,142,42,0.12); border:1px solid rgba(196,142,42,0.35); color:#8a5a12;
+    border-radius:8px; padding:10px 12px; margin-bottom:12px;
+  }
+  .settings-warning.show{ display:flex; }
+  .settings-save-btn{ background:var(--navy); color:#fff; border-color:var(--navy); align-self:flex-start; }
+  .settings-save-btn:hover{ background:var(--navy-deep); }
+  .settings-divider{ height:1px; background:var(--line-strong); margin:6px 0 10px; opacity:.6; }
+  .settings-row-actions{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:2px; }
+  .settings-refresh-btn{ background:var(--surface-alt); }
+  .settings-cache-note{ font-size:11px; color:var(--ink-faint); margin-top:2px; }
+
+  @media print{
+    .refresh-banner{ display:none !important; }
+  }
+
+  /* ---- Enterprise footer ---- */
+  footer.enterprise-footer{
+    background:var(--navy-deep); color:#B9C3CE; text-align:center; padding:0; margin-top:10px;
+  }
+  .footer-inner{
+    max-width:1440px; margin:0 auto; padding:22px 40px; display:flex; flex-wrap:wrap; gap:10px 28px;
+    align-items:center; justify-content:center; font-size:11px;
+  }
+  .footer-inner .f-item b{ color:#F3F1E9; font-family:'IBM Plex Mono',monospace; direction:ltr; unicode-bidi:isolate; }
+  .footer-divider{ width:1px; height:12px; background:rgba(255,255,255,0.2); }
+
+  /* ---- Print ---- */
+  @media print{
+    .control-bar, .filter-bar, .quick-actions, .theme-toggle, .header-actions, #smartTooltip, #pageSkeleton{ display:none !important; }
+    body{ background:#fff; }
+  }
+
+  @media (max-width: 1100px){
+    .alert-grid{ grid-template-columns:1fr; }
+    .sk-row{ grid-template-columns:repeat(2,1fr); }
+    .sk-charts-row{ grid-template-columns:1fr; }
+    .control-bar{ padding:9px 18px; }
+  }
+
+  /* ======================================================
+     BRANDING + HEADER/FOOTER/GENERAL UI REFRESH
+     ====================================================== */
+
+  /* ---- Brand lockup (logo + name) ---- */
+  .brand-lockup{ display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+  .brand-mark{
+    width:40px; height:40px; border-radius:11px; flex-shrink:0;
+    background:linear-gradient(155deg, var(--gold) 0%, #8a6a22 100%);
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 3px 10px rgba(169,131,46,0.35), inset 0 1px 0 rgba(255,255,255,0.25);
+  }
+  .brand-mark svg{ width:22px; height:22px; display:block; }
+  .brand-mark-img{ width:100%; height:100%; object-fit:contain; border-radius:11px; display:block; }
+  .brand-mark-fallback{ display:none; width:22px; height:22px; }
+  .brand-name-block{ display:flex; flex-direction:column; line-height:1.15; }
+  .brand-name-block .brand-name{
+    font-family:'Tajawal',sans-serif; font-weight:800; font-size:17px; color:#fff; letter-spacing:.4px;
+  }
+  .brand-name-block .brand-tagline{
+    font-family:'IBM Plex Mono',monospace; direction:ltr; unicode-bidi:isolate;
+    font-size:9.5px; color:#C9BE9E; letter-spacing:.16em; text-transform:uppercase; margin-top:2px;
+  }
+
+  /* ---- Header action cluster (dark mode / settings / export) ---- */
+  .header-actions{ position:relative; z-index:1; display:flex; align-items:center; gap:8px; margin-top:10px; flex-wrap:wrap; }
+  .header-actions .theme-toggle{ margin-top:0; }
+  .icon-btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:6px;
+    background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18);
+    color:#F3F1E9; border-radius:20px; height:31px; padding:0 13px; font-size:11.5px; cursor:pointer;
+    font-family:inherit; transition:.15s ease; white-space:nowrap;
+  }
+  .icon-btn:hover{ background:rgba(255,255,255,0.16); transform:translateY(-1px); }
+  .icon-btn:active{ transform:translateY(0); }
+  .header-meta-row{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-top:8px; }
+  .last-updated-chip{
+    display:inline-flex; align-items:center; gap:7px;
+    background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14);
+    border-radius:20px; padding:5px 12px; font-size:11px; color:#DCE2E8;
+  }
+  .last-updated-chip .lu-dot{ width:6px; height:6px; border-radius:50%; background:var(--accepted); box-shadow:0 0 0 3px rgba(63,125,88,0.35); animation:pulseDot 2s infinite; }
+  .last-updated-chip .lu-time{ font-family:'IBM Plex Mono',monospace; direction:ltr; unicode-bidi:isolate; color:#fff; font-weight:600; }
+
+  .current-date-chip{
+    display:inline-flex; align-items:center; gap:7px;
+    background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14);
+    border-radius:20px; padding:5px 12px; font-size:11px; color:#DCE2E8;
+  }
+  .current-date-chip .lu-time{ font-family:'IBM Plex Mono',monospace; direction:ltr; unicode-bidi:isolate; color:#fff; font-weight:600; }
+
+  .conn-status-chip{
+    display:inline-flex; align-items:center; gap:7px;
+    background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14);
+    border-radius:20px; padding:5px 12px; font-size:11px; color:#DCE2E8; font-weight:600;
+  }
+  .conn-status-chip .conn-dot{ width:7px; height:7px; border-radius:50%; background:var(--accepted); box-shadow:0 0 0 3px rgba(63,125,88,0.35); }
+  .conn-status-chip[data-state="demo"]{ color:#F3E3B8; }
+  .conn-status-chip[data-state="demo"] .conn-dot{ background:var(--pending, #C08A2E); box-shadow:0 0 0 3px rgba(192,138,46,0.35); }
+  .conn-status-chip[data-state="error"]{ color:#F3C7C2; }
+  .conn-status-chip[data-state="error"] .conn-dot{ background:var(--rejected, #B5473F); box-shadow:0 0 0 3px rgba(181,71,63,0.35); animation:pulseDot 1.4s infinite; }
+  .conn-status-chip[data-state="live"] .conn-dot{ animation:pulseDot 2s infinite; }
+
+  /* ---- Header layout polish ---- */
+  header.top{ padding:24px 40px 20px; }
+  .top-row{ align-items:flex-start; }
+  .top-meta{ margin-top:2px; }
+
+  /* ---- Enterprise footer branding ---- */
+  .footer-brand-row{
+    display:flex; align-items:center; justify-content:center; gap:10px;
+    padding:16px 40px 4px; max-width:1440px; margin:0 auto;
+  }
+  .footer-brand-row .footer-mark{
+    width:24px; height:24px; border-radius:7px; flex-shrink:0;
+    background:linear-gradient(155deg, var(--gold) 0%, #8a6a22 100%);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .footer-brand-row .footer-mark svg{ width:13px; height:13px; }
+  .footer-brand-row .footer-brand-text{ font-family:'Tajawal',sans-serif; font-weight:700; font-size:13px; color:#F3F1E9; }
+  .footer-brand-row .footer-version-pill{
+    font-family:'IBM Plex Mono',monospace; direction:ltr; unicode-bidi:isolate;
+    font-size:10px; color:#C9BE9E; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.16);
+    border-radius:20px; padding:2px 9px;
+  }
+
+  /* ---- General UI: spacing / alignment / equal-height cards / shadows / hover ---- */
+  main{ padding:32px 40px 64px; }
+  .kpi-row{ gap:18px; margin-bottom:32px; align-items:stretch; }
+  .stub{
+    display:flex; flex-direction:column; justify-content:space-between;
+    box-shadow:0 1px 3px rgba(24,38,51,0.05), 0 6px 16px rgba(24,38,51,0.06);
+    transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+  }
+  .stub:hover{
+    transform:translateY(-2px);
+    box-shadow:0 3px 8px rgba(24,38,51,0.07), 0 12px 28px rgba(24,38,51,0.10);
+    border-color:var(--line-strong);
+  }
+  .panel-grid{ gap:18px; margin-bottom:18px; align-items:stretch; }
+  .panel{
+    display:flex; flex-direction:column;
+    box-shadow:0 1px 3px rgba(24,38,51,0.05), 0 6px 16px rgba(24,38,51,0.06);
+    transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+  }
+  .panel:hover{
+    box-shadow:0 3px 8px rgba(24,38,51,0.07), 0 14px 30px rgba(24,38,51,0.09);
+    border-color:var(--line-strong);
+  }
+  .panel .chart-wrap{ flex:1; }
+  .health-panel, .insights-panel, .alert-card, .exec-summary-panel{
+    transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+  }
+  .health-panel:hover, .insights-panel:hover, .exec-summary-panel:hover{
+    box-shadow:0 3px 8px rgba(24,38,51,0.07), 0 14px 30px rgba(24,38,51,0.09);
+    border-color:var(--line-strong);
+  }
+  .section-heading{ margin-top:4px; }
+
+  /* ---- Mobile responsiveness refinements ---- */
+  @media (max-width: 760px){
+    header.top{ padding:20px 20px 18px; }
+    .brand-mark{ width:34px; height:34px; border-radius:9px; }
+    .brand-mark svg{ width:18px; height:18px; }
+    .brand-name-block .brand-name{ font-size:15px; }
+    h1.title{ font-size:23px; }
+    .top-meta{ gap:16px; }
+    .top-meta .meta-item .v{ font-size:16px; }
+    .header-actions{ width:100%; }
+    .icon-btn, .theme-toggle{ flex:1; justify-content:center; }
+    main{ padding:20px 16px 40px; }
+    .kpi-row{ grid-template-columns:repeat(2,1fr); gap:12px; margin-bottom:22px; }
+    .panel-grid, .panel-grid.thirds{ gap:12px; }
+    .control-bar{ padding:10px 16px; gap:14px; }
+    .filter-bar{ padding:12px 16px; }
+    .footer-inner{ padding:16px 20px; }
+    .footer-brand-row{ padding:14px 20px 2px; flex-wrap:wrap; }
+    .exec-summary-panel{ padding:16px; gap:16px; }
+    .exec-summary-grid{ grid-template-columns:repeat(2,1fr); }
+  }
+  @media (max-width: 480px){
+    .kpi-row{ grid-template-columns:1fr; }
+    .brand-name-block .brand-tagline{ display:none; }
+  }
+
+  /* ======================================================
+     EXECUTIVE ANALYTICS — POLISH PASS
+     ====================================================== */
+
+  /* ---- number pop-in animation (applied to KPI/exec values on refresh) ---- */
+  @keyframes valuePop{ 0%{ opacity:.35; transform:translateY(2px) scale(.97); } 100%{ opacity:1; transform:translateY(0) scale(1); } }
+  .value-pop{ animation:valuePop .35s ease; }
+
+  /* ---- Executive Snapshot (compact at-a-glance card) ---- */
+  .exec-snapshot-panel{
+    background:linear-gradient(135deg, var(--navy-deep) 0%, var(--navy) 100%);
+    border-radius:12px; box-shadow:var(--shadow); padding:18px 22px; margin-bottom:22px;
+    display:flex; align-items:center; gap:22px; flex-wrap:wrap; color:#F3F1E9; position:relative; overflow:hidden;
+  }
+  .exec-snapshot-panel::before{
+    content:""; position:absolute; inset:0;
+    background-image: repeating-linear-gradient(90deg, rgba(255,255,255,0.03) 0 1px, transparent 1px 34px);
+    pointer-events:none;
+  }
+  .snap-score-ring{ position:relative; width:78px; height:78px; flex-shrink:0; z-index:1; }
+  .snap-score-ring svg{ width:78px; height:78px; transform:rotate(-90deg); }
+  .snap-score-ring .track{ fill:none; stroke:rgba(255,255,255,0.15); stroke-width:8; }
+  .snap-score-ring .fill{ fill:none; stroke-width:8; stroke-linecap:round; transition:stroke-dashoffset .6s ease; }
+  .snap-score-num{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column; }
+  .snap-score-num b{ font-family:'IBM Plex Mono',monospace; font-size:19px; line-height:1; direction:ltr; }
+  .snap-score-num span{ font-size:8.5px; color:#C9BE9E; margin-top:2px; }
+  .snap-status-block{ z-index:1; }
+  .snap-status-label{ font-size:11px; color:#C9BE9E; letter-spacing:.03em; margin-bottom:3px; }
+  .snap-status-value{ font-family:'Tajawal',sans-serif; font-weight:800; font-size:17px; }
+  .snap-divider{ width:1px; align-self:stretch; background:rgba(255,255,255,0.15); z-index:1; }
+  .snap-stats{ display:flex; gap:26px; flex-wrap:wrap; z-index:1; flex:1; }
+  .snap-stat{ min-width:100px; }
+  .snap-stat .sl{ font-size:10.5px; color:#AEB9C6; margin-bottom:3px; }
+  .snap-stat .sv{ font-family:'IBM Plex Mono',monospace; direction:ltr; unicode-bidi:isolate; font-size:16.5px; font-weight:700; color:#fff; }
+  .snap-stat .sv.crit{ color:#F0A99C; }
+  @media (max-width: 900px){ .exec-snapshot-panel{ flex-direction:column; align-items:flex-start; } .snap-divider{ display:none; } }
+
+  /* ---- Executive Health Score panel ---- */
+  .health-score-panel{
+    background:var(--surface); border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow);
+    padding:20px; display:flex; gap:26px; flex-wrap:wrap; align-items:center; margin-bottom:22px;
+  }
+  .hs-gauge{ position:relative; width:132px; height:132px; flex-shrink:0; }
+  .hs-gauge svg{ width:132px; height:132px; transform:rotate(-90deg); }
+  .hs-gauge .track{ fill:none; stroke:var(--neutral-bg); stroke-width:12; }
+  .hs-gauge .fill{ fill:none; stroke-width:12; stroke-linecap:round; transition:stroke-dashoffset .7s cubic-bezier(.4,0,.2,1); }
+  .hs-gauge-num{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .hs-gauge-num b{ font-family:'IBM Plex Mono',monospace; font-size:30px; color:var(--navy-deep); line-height:1; }
+  .hs-gauge-num span{ font-size:10.5px; color:var(--ink-faint); margin-top:3px; }
+  .hs-band-badge{ font-size:11px; font-weight:700; padding:3px 12px; border-radius:20px; display:inline-block; margin-top:8px; }
+  .hs-breakdown{ flex:1; min-width:260px; display:flex; flex-direction:column; gap:9px; }
+  .hs-breakdown-title{ font-family:'Tajawal',sans-serif; font-weight:700; font-size:12.5px; color:var(--navy-deep); margin-bottom:2px; }
+  .hs-factor-row{ display:grid; grid-template-columns:150px 1fr 44px; align-items:center; gap:10px; font-size:11.5px; }
+  .hs-factor-label{ color:var(--ink-soft); }
+  .hs-factor-track{ height:6px; border-radius:4px; background:var(--neutral-bg); overflow:hidden; }
+  .hs-factor-fill{ height:100%; border-radius:4px; transition:width .6s ease; }
+  .hs-factor-val{ font-family:'IBM Plex Mono',monospace; direction:ltr; text-align:left; color:var(--ink-soft); font-weight:600; }
+
+  /* ---- Alert tier badges (Critical / Warning / Information) ---- */
+  .alert-tier{ font-size:9px; letter-spacing:.06em; font-weight:700; text-transform:uppercase; color:var(--ink-faint); }
+
+  /* ---- Smart Insight cards v2: Problem / Impact / Action / Priority ---- */
+  .insight-cards-v2{ display:grid; grid-template-columns:repeat(auto-fit, minmax(280px,1fr)); gap:14px; }
+  .insight-card-v2{
+    background:var(--surface-alt); border:1px solid var(--line); border-radius:10px; padding:14px 16px;
+    display:flex; flex-direction:column; gap:8px; transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .insight-card-v2:hover{ transform:translateY(-1px); box-shadow:0 6px 16px rgba(24,38,51,0.08); }
+  .insight-card-v2-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .insight-priority{ font-size:9.5px; letter-spacing:.05em; font-weight:700; text-transform:uppercase; border-radius:5px; padding:2px 8px; }
+  .insight-priority.critical{ background:var(--rejected-bg); color:var(--rejected); }
+  .insight-priority.high{ background:var(--pending-bg); color:var(--pending); }
+  .insight-priority.medium{ background:var(--pending-bg); color:var(--gold); }
+  .insight-priority.low{ background:var(--accepted-bg); color:var(--accepted); }
+  .insight-card-v2-row{ font-size:12px; line-height:1.55; }
+  .insight-card-v2-row .k{ font-size:10px; font-weight:700; color:var(--ink-faint); letter-spacing:.03em; display:block; margin-bottom:2px; }
+  .insight-card-v2-row .v{ color:var(--ink); }
+  .insight-card-v2-row .v b{ color:var(--navy-deep); font-family:'IBM Plex Mono',monospace; direction:ltr; unicode-bidi:isolate; }
+
+  /* ---- Executive Action Center ---- */
+  .action-center-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(270px,1fr)); gap:14px; }
+  .action-card{
+    background:var(--surface); border:1px solid var(--line); border-right:4px solid var(--navy);
+    border-radius:10px; box-shadow:var(--shadow); padding:14px 16px; display:flex; flex-direction:column; gap:9px;
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .action-card:hover{ transform:translateY(-1px); box-shadow:0 6px 20px rgba(24,38,51,0.1); }
+  .action-card.critical{ border-right-color:var(--rejected); }
+  .action-card.high{ border-right-color:var(--pending); }
+  .action-card.medium{ border-right-color:var(--gold); }
+  .action-card.low{ border-right-color:var(--accepted); }
+  .action-title{ display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700; color:var(--navy-deep); }
+  .action-desc{ font-size:12px; color:var(--ink-soft); line-height:1.5; }
+  .action-meta{ display:flex; flex-wrap:wrap; gap:8px; margin-top:2px; }
+  .action-meta-item{ background:var(--surface-alt); border:1px solid var(--line); border-radius:7px; padding:5px 9px; font-size:10.5px; color:var(--ink-soft); flex:1; min-width:110px; }
+  .action-meta-item .k{ display:block; color:var(--ink-faint); font-size:9.5px; margin-bottom:2px; }
+  .action-meta-item .v{ color:var(--ink); font-weight:600; }
+  .action-empty{ padding:20px; text-align:center; color:var(--ink-faint); font-size:12.5px; background:var(--surface); border:1px dashed var(--line-strong); border-radius:10px; grid-column:1 / -1; }
+
+  /* ---- Visual improvements: refined trend badges + progress bars across the Executive Analytics section ---- */
+  .stub-trend, .exec-compare-delta{ transition:background-color .2s ease, color .2s ease; }
+  .stub-achieve-fill, .exec-reason-bar-fill, .health-bar-fill{ transition:width .6s cubic-bezier(.4,0,.2,1); background-size:200% 100%; }
+  .exec-core-card, .exec-stat-card, .tp-card, .alert-card, .action-card{
+    transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+  }
+  .exec-core-card:hover{ transform:translateY(-1px); box-shadow:0 6px 16px rgba(24,38,51,0.08); }
+  .exec-core-trend{ margin-top:5px; }
+  .kpi-trend-badge{
+    font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:700; border-radius:10px; padding:1px 7px;
+    direction:ltr; unicode-bidi:isolate; display:inline-flex; align-items:center; gap:3px;
+  }
+  .kpi-trend-badge.up{ background:var(--accepted-bg); color:var(--accepted); }
+  .kpi-trend-badge.down{ background:var(--rejected-bg); color:var(--rejected); }
+  .kpi-trend-badge.flat{ background:var(--neutral-bg); color:var(--neutral); }
+
+  @media (max-width: 760px){
+    .health-score-panel{ flex-direction:column; align-items:flex-start; }
+    .exec-snapshot-panel{ padding:16px; }
+    .snap-stats{ gap:16px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="demoModeBanner" class="demo-mode-banner hidden" role="status">
+  <span>⚠️ Demo Mode - Google Sheets is not connected.</span>
+  <button class="dmb-settings-btn" id="demoModeSettingsBtn" type="button">إعدادات الاتصال</button>
+</div>
+
+<header class="top">
+  <div class="top-row">
+    <div>
+      <div class="brand-lockup">
+        <div class="brand-mark" aria-hidden="true">
+          <img src="logo.png" alt="" class="brand-mark-img"
+               onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+          <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" class="brand-mark-fallback">
+            <path d="M6 40 L32 12 L58 40" stroke="#182633" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M16 40 L32 24 L48 40" stroke="#F3F1E9" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="brand-name-block">
+          <span class="brand-name">ARRIVE</span>
+          <span class="brand-tagline">Complaints Management</span>
+        </div>
+      </div>
+      <span class="brand-eyebrow">COMPLAINT MANIFEST · شركة الشحن والتوصيل</span>
+      <h1 class="title">لوحة متابعة الشكاوى</h1>
+      <div class="subtitle" id="dateRangeLabel">تتبّع حالة الشكاوى، التعويضات، وأداء الفروع</div>
+      <div class="header-meta-row">
+        <span class="last-updated-chip">
+          <span class="lu-dot"></span>
+          <span>آخر تحديث</span>
+          <span class="lu-time" id="headerLastUpdate">—</span>
+        </span>
+        <span class="current-date-chip">
+          <span>📅</span>
+          <span class="lu-time" id="headerCurrentDate">—</span>
+        </span>
+        <span class="conn-status-chip" id="connStatusChip" data-state="live">
+          <span class="conn-dot" id="connStatusDot"></span>
+          <span id="connStatusLabel">متصل</span>
+        </span>
+      </div>
+    </div>
+    <div class="top-meta">
+      <div class="meta-item"><div class="v num" id="metaTotal">0</div><div class="l">إجمالي الشكاوى</div></div>
+      <div class="meta-item"><div class="v num" id="metaBranches">0</div><div class="l">فرعًا مشمولًا</div></div>
+      <div class="meta-item"><div class="v num" id="metaComp">0</div><div class="l">إجمالي التعويض (ج.م)</div></div>
+    </div>
+  </div>
+  <div class="header-actions">
+    <button class="theme-toggle" id="themeToggle" type="button">
+      <span id="themeToggleIcon">🌙</span> <span id="themeToggleLabel">الوضع الداكن</span>
+    </button>
+    <button class="icon-btn" id="headerSettings" type="button" title="الإعدادات">
+      <span>⚙️</span> إعدادات
+    </button>
+    <button class="icon-btn" id="headerExport" type="button" title="تصدير البيانات">
+      <span>⬇</span> تصدير
+    </button>
+  </div>
+</header>
+
+<div class="control-bar" id="controlBar">
+  <div class="live-stats">
+    <div class="ls-item"><span class="live-dot"></span><span class="ls-l">آخر تحديث للبيانات</span><span class="ls-v" id="lsRefresh">—</span></div>
+    <div class="ls-item"><span class="ls-l">الوقت الحالي</span><span class="ls-v" id="lsClock">—</span></div>
+    <div class="ls-item"><span class="ls-l">إجمالي السجلات</span><span class="ls-v" id="lsTotal">0</span></div>
+    <div class="ls-item"><span class="ls-l">عوامل التصفية النشطة</span><span class="ls-v" id="lsFilters">0</span></div>
+    <div class="ls-item"><span class="ls-l">السجلات المعروضة</span><span class="ls-v" id="lsVisible">0</span></div>
+    <div id="alertChipWrap"></div>
+  </div>
+  <div class="qa-spacer"></div>
+  <div class="quick-actions">
+    <button class="qa-btn" id="qaRefresh" type="button"><span class="qa-icon">↻</span> تحديث اللوحة</button>
+    <button class="qa-btn" id="qaResetAll" type="button"><span class="qa-icon">⟲</span> إعادة التصفية</button>
+    <button class="qa-btn" id="qaExport" type="button"><span class="qa-icon">⬇</span> تصدير CSV</button>
+    <button class="qa-btn" id="qaPrint" type="button"><span class="qa-icon">🖶</span> طباعة</button>
+    <button class="qa-btn" id="qaFullscreen" type="button"><span class="qa-icon">⛶</span> ملء الشاشة</button>
+  </div>
+</div>
+
+<div class="filter-bar" id="filterBar">
+  <div class="fgroup">
+    <label for="fOwner">مسؤول الشكوى</label>
+    <select id="fOwner"><option value="">الكل</option></select>
+  </div>
+  <div class="fgroup">
+    <label for="fBranch">الفرع المتسبب</label>
+    <select id="fBranch"><option value="">الكل</option></select>
+  </div>
+  <div class="fgroup">
+    <label for="fType">نوع الشكوى</label>
+    <select id="fType"><option value="">الكل</option></select>
+  </div>
+  <div class="fgroup">
+    <label for="fStatus">حالة الشكوى</label>
+    <select id="fStatus"><option value="">الكل</option></select>
+  </div>
+  <div class="fgroup">
+    <label for="fMonth">الشهر</label>
+    <select id="fMonth"><option value="">الكل</option></select>
+  </div>
+  <div class="fgroup">
+    <label for="fSender">اسم الراسل</label>
+    <select id="fSender"><option value="">الكل</option></select>
+  </div>
+  <div class="fgroup">
+    <label for="fDateFrom">تاريخ الشكوى من</label>
+    <input type="date" id="fDateFrom">
+  </div>
+  <div class="fgroup">
+    <label for="fDateTo">تاريخ الشكوى إلى</label>
+    <input type="date" id="fDateTo">
+  </div>
+  <div class="fgroup">
+    <label for="fSearch">بحث (اسم، بوليصة، محتوى)</label>
+    <input type="text" id="fSearch" placeholder="اكتب للبحث…">
+  </div>
+  <div class="filter-spacer"></div>
+  <div class="result-count"><b id="resultCount">0</b> نتيجة</div>
+  <button class="btn-reset" id="btnReset">إعادة التصفية</button>
+
+  <div class="filter-divider"></div>
+
+  <div class="fgroup">
+    <label for="fBearer">وظيفة المتحمل للتعويض</label>
+    <select id="fBearer"><option value="">الكل</option></select>
+  </div>
+  <div class="fgroup">
+    <label for="fReviewResult">نتيجة مراجعة التعويض</label>
+    <select id="fReviewResult"><option value="">الكل</option></select>
+  </div>
+  <div class="fgroup">
+    <label for="fConfirm">التأكيد على المراجعة</label>
+    <select id="fConfirm">
+      <option value="">الكل</option>
+      <option value="yes">تم التأكيد</option>
+      <option value="no">لم يتم التأكيد</option>
+    </select>
+  </div>
+  <div class="fgroup">
+    <label for="fReviewFrom">تاريخ المراجعة من</label>
+    <input type="date" id="fReviewFrom">
+  </div>
+  <div class="fgroup">
+    <label for="fReviewTo">تاريخ المراجعة إلى</label>
+    <input type="date" id="fReviewTo">
+  </div>
+</div>
+
+<main>
+
+  <section class="exec-snapshot-panel" id="execSnapshotPanel"></section>
+
+  <div class="section-heading">
+    <h2><span class="tag">Exec</span> الملخص التنفيذي</h2>
+    <span class="section-sub">أهم مؤشرات الأداء المحسوبة آليًا من البيانات الحالية ضمن عوامل التصفية</span>
+  </div>
+  <section class="exec-core-panel" id="execCorePanel">
+    <div class="exec-core-grid" id="execCoreGrid"></div>
+  </section>
+
+  <section class="kpi-row" id="kpiRow">
+    <div class="stub">
+      <div class="barcode" id="bc1"></div>
+      <div class="stub-label">إجمالي الشكاوى</div>
+      <div class="stub-value num" id="kpiTotal">0</div>
+      <div class="stub-sub" id="kpiTotalSub">—</div>
+      <div class="stub-enh" id="kpiTotalEnh"></div>
+    </div>
+    <div class="stub accent-accepted">
+      <div class="barcode" id="bc2"></div>
+      <div class="stub-label">نسبة قبول التعويض</div>
+      <div class="stub-value num" id="kpiAcceptRate">0<sup>%</sup></div>
+      <div class="stub-sub" id="kpiAcceptSub">—</div>
+      <div class="stub-enh" id="kpiAcceptRateEnh"></div>
+    </div>
+    <div class="stub accent-rejected">
+      <div class="barcode" id="bc3"></div>
+      <div class="stub-label">تعويضات مرفوضة</div>
+      <div class="stub-value num" id="kpiRejected">0</div>
+      <div class="stub-sub" id="kpiRejectedSub">—</div>
+      <div class="stub-enh" id="kpiRejectedEnh"></div>
+    </div>
+    <div class="stub accent-pending">
+      <div class="barcode" id="bc4"></div>
+      <div class="stub-label">قيد التحقيق</div>
+      <div class="stub-value num" id="kpiPending">0</div>
+      <div class="stub-sub" id="kpiPendingSub">—</div>
+      <div class="stub-enh" id="kpiPendingEnh"></div>
+    </div>
+    <div class="stub accent-gold">
+      <div class="barcode" id="bc5"></div>
+      <div class="stub-label">متوسط زمن الحل (يوم)</div>
+      <div class="stub-value num" id="kpiSla">0</div>
+      <div class="stub-sub" id="kpiSlaSub">—</div>
+      <div class="stub-enh" id="kpiSlaEnh"></div>
+    </div>
+  </section>
+
+  <div class="section-heading">
+    <h2><span class="tag">Score</span> مؤشر الصحة التنفيذي</h2>
+    <span class="section-sub">درجة موزونة (0-100) من معدل الإغلاق، الالتزام بـ SLA، زمن الحل، نسبة الشكاوى المعلّقة، تكلفة التعويضات، ونمو الشكاوى</span>
+  </div>
+  <section class="health-score-panel" id="healthScorePanel"></section>
+
+  <div class="section-heading">
+    <h2><span class="tag">Live</span> مركز التنبيهات التنفيذي</h2>
+    <span class="section-sub">تنبيهات مصنّفة (حرج / تحذير / معلومة) ومرتبة تلقائيًا حسب الخطورة — تختفي فور تحسّن الحالة</span>
+  </div>
+  <section class="alert-grid" id="alertCenter"></section>
+
+  <div class="section-heading">
+    <h2><span class="tag">Act</span> مركز الإجراءات التنفيذية</h2>
+    <span class="section-sub">إجراءات إدارية مقترحة تلقائيًا مع الأولوية، الجهة المسؤولة، والأثر المتوقع</span>
+  </div>
+  <section class="action-center-grid" id="actionCenterGrid"></section>
+
+  <div class="section-heading">
+    <h2><span class="tag">AI</span> رؤى ذكية للإدارة (Smart Insights)</h2>
+    <span class="section-sub">رؤى ومقارنات وتوصيات تُبنى آليًا بقواعد برمجية من البيانات الحالية — لا تُغيّر أي حساب أو رسم بياني قائم</span>
+  </div>
+  <section class="exec-summary-panel" id="execSummaryPanel">
+    <h4 class="exec-subheading">بطاقات الرؤى التنفيذية</h4>
+    <div class="exec-summary-grid" id="execSummaryGrid"></div>
+    <div class="exec-summary-subgrid">
+      <div class="exec-compare-col">
+        <h4 class="exec-subheading">مقارنة الأداء</h4>
+        <div class="exec-compare-grid" id="execCompareGrid"></div>
+      </div>
+      <div class="exec-reasons-col">
+        <h4 class="exec-subheading">أبرز أسباب الشكاوى</h4>
+        <div class="exec-reasons-list" id="execReasonsList"></div>
+      </div>
+    </div>
+    <div class="exec-reco-block">
+      <h4 class="exec-subheading">توصيات ذكية للإدارة <span class="exec-rule-tag">مبنية على قواعد آلية — وليست ذكاءً اصطناعيًا خارجيًا</span></h4>
+      <div id="execRecommendations" class="exec-reco-list"></div>
+    </div>
+  </section>
+
+  <div class="section-heading">
+    <h2><span class="tag">AI</span> رؤى تفصيلية (Problem · Impact · Action)</h2>
+    <span class="section-sub">لكل رؤية: المشكلة، الأثر على الأعمال، الإجراء الموصى به، والأولوية — مبنية بقواعد برمجية من البيانات الحالية</span>
+  </div>
+  <section class="insights-panel" id="insightsPanel"></section>
+
+  <div class="section-heading">
+    <h2><span class="tag">Top</span> أفضل وأضعف الأداء</h2>
+    <span class="section-sub">تصنيفات تلقائية لأفضل وأضعف 5 معالجين، وأبرز أسباب الشكاوى وتكاليف التعويض</span>
+  </div>
+  <section class="top-performers-grid" id="topPerformersGrid"></section>
+
+  <section class="panel-grid">
+    <div class="panel">
+      <h3>الاتجاه اليومي للشكاوى</h3>
+      <div class="panel-sub">عدد الشكاوى الواردة يوميًا خلال الفترة المحددة</div>
+      <div class="chart-wrap"><canvas id="chartTrend"></canvas></div>
+    </div>
+    <div class="panel">
+      <h3>حالة التعويض</h3>
+      <div class="panel-sub">توزيع الشكاوى حسب نتيجة المراجعة</div>
+      <div class="chart-wrap"><canvas id="chartStatus"></canvas></div>
+    </div>
+  </section>
+
+  <section class="panel-grid thirds">
+    <div class="panel">
+      <h3>الشكاوى حسب الفرع</h3>
+      <div class="panel-sub">أعلى 10 فروع من حيث عدد الشكاوى</div>
+      <div class="chart-wrap tall"><canvas id="chartBranch"></canvas></div>
+    </div>
+    <div class="panel">
+      <h3>نوع الشكوى</h3>
+      <div class="panel-sub">توزيع الشكاوى حسب نوعها الرئيسي</div>
+      <div class="chart-wrap tall"><canvas id="chartType"></canvas></div>
+    </div>
+    <div class="panel">
+      <h3>تصنيف المشكلة</h3>
+      <div class="panel-sub">أكثر 8 أسباب تكرارًا</div>
+      <div class="chart-wrap tall"><canvas id="chartClassification"></canvas></div>
+    </div>
+  </section>
+
+  <section class="panel-grid">
+    <div class="panel">
+      <h3>التعويض حسب الجهة المتحملة</h3>
+      <div class="panel-sub">إجمالي مبلغ التعويض (ج.م) وعدد الحالات لكل وظيفة متحملة</div>
+      <div class="chart-wrap"><canvas id="chartBearer"></canvas></div>
+    </div>
+    <div class="panel">
+      <h3>نتيجة مراجعة التعويض</h3>
+      <div class="panel-sub">توزيع الحالات حسب نتيجة المراجعة المحاسبية</div>
+      <div class="chart-wrap"><canvas id="chartReviewResult"></canvas></div>
+    </div>
+  </section>
+
+  <div class="section-heading">
+    <h2><span class="tag">Index</span> مؤشر أداء مسؤولي الشكاوى</h2>
+    <span class="section-sub">درجة من 100 لكل مسؤول شكوى بناءً على معدل الإغلاق، الالتزام بـ SLA، متوسط زمن الحل، والشكاوى المفتوحة</span>
+  </div>
+  <section class="health-panel">
+    <div class="health-table-wrap">
+      <table class="health-table" id="healthTable">
+        <thead>
+          <tr>
+            <th data-hkey="owner">مسؤول الشكوى <span class="arrow"></span></th>
+            <th data-hkey="count">إجمالي الشكاوى المسندة <span class="arrow"></span></th>
+            <th data-hkey="closed">الشكاوى المغلقة <span class="arrow"></span></th>
+            <th data-hkey="open">الشكاوى المفتوحة <span class="arrow"></span></th>
+            <th data-hkey="slaCompliance">الالتزام بـ SLA <span class="arrow"></span></th>
+            <th data-hkey="avgSla">متوسط زمن الحل <span class="arrow"></span></th>
+            <th data-hkey="csat">رضا العملاء <span class="arrow"></span></th>
+            <th data-hkey="score">درجة الأداء <span class="arrow">▼</span></th>
+            <th data-hkey="trend">الاتجاه <span class="arrow"></span></th>
+          </tr>
+        </thead>
+        <tbody id="healthTableBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="table-panel">
+    <div class="table-head-bar">
+      <h3 style="font-family:'Tajawal',sans-serif; font-weight:700; font-size:15px; color:var(--navy-deep);">سجل الشكاوى</h3>
+      <div class="panel-sub" style="margin:0;">اضغط على أي صف لعرض التفاصيل الكاملة</div>
+    </div>
+    <div class="table-scroll">
+      <table id="dataTable">
+        <thead>
+          <tr>
+            <th data-key="id">رقم الشكوى <span class="arrow"></span></th>
+            <th data-key="date_added">التاريخ <span class="arrow"></span></th>
+            <th data-key="owner">المسؤول <span class="arrow"></span></th>
+            <th data-key="complainant">الشاكي <span class="arrow"></span></th>
+            <th data-key="type">النوع <span class="arrow"></span></th>
+            <th data-key="branch">الفرع <span class="arrow"></span></th>
+            <th data-key="content">المحتوى</th>
+            <th data-key="status">الحالة <span class="arrow"></span></th>
+            <th data-key="compensation_amount">التعويض <span class="arrow"></span></th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<footer class="enterprise-footer">
+  <div class="footer-brand-row">
+    <div class="footer-mark" aria-hidden="true">
+      <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+        <path d="M6 40 L32 12 L58 40" stroke="#F3F1E9" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <span class="footer-brand-text">ARRIVE Complaints Management Dashboard</span>
+    <span class="footer-version-pill">Version 3.0</span>
+  </div>
+  <div class="footer-inner">
+    <span class="f-item">تم إنشاؤها بواسطة <b>ARRIVE Operations Audit</b></span>
+    <span class="footer-divider"></span>
+    <span class="f-item">إصدار اللوحة <b id="footVersion">v3.0.0</b></span>
+    <span class="footer-divider"></span>
+    <span class="f-item">مصدر البيانات <b>ملف تتبع الشكاوى الداخلي</b></span>
+    <span class="footer-divider"></span>
+    <span class="f-item">آخر تحديث <b id="footLastUpdate">—</b></span>
+    <span class="footer-divider"></span>
+    <span class="f-item">عدد السجلات <b id="footRecordCount">0</b></span>
+  </div>
+</footer>
+
+<div class="overlay" id="overlay">
+  <div class="modal" id="modal"></div>
+</div>
+
+<div id="smartTooltip"></div>
+
+<div id="pageSkeleton" aria-hidden="true">
+  <div class="sk-row">
+    <div class="sk-block sk-kpi"></div><div class="sk-block sk-kpi"></div><div class="sk-block sk-kpi"></div>
+    <div class="sk-block sk-kpi"></div><div class="sk-block sk-kpi"></div>
+  </div>
+  <div class="sk-charts-row">
+    <div class="sk-block sk-chart"></div><div class="sk-block sk-chart"></div>
+  </div>
+  <div class="sk-block sk-table"></div>
+</div>
+
+<!-- Slim non-blocking banner for background auto-refresh problems (doesn't hide the dashboard) -->
+<div id="refreshBanner" class="refresh-banner hidden" role="status">
+  <span class="refresh-banner-icon">⚠️</span>
+  <span id="refreshBannerMsg" class="refresh-banner-msg">—</span>
+  <button class="refresh-banner-btn" id="refreshBannerRetryBtn" type="button">إعادة المحاولة الآن</button>
+</div>
+
+<!-- Settings modal: API_URL entry, persisted in localStorage -->
+<div class="overlay" id="settingsOverlay">
+  <div class="modal settings-modal">
+    <div class="modal-head">
+      <div>
+        <div class="mid">SETTINGS · الإعدادات</div>
+        <h2>إعدادات مصدر البيانات</h2>
+      </div>
+      <button class="modal-close" id="settingsClose" aria-label="إغلاق">✕</button>
+    </div>
+    <div class="settings-body">
+      <div class="settings-warning" id="settingsUrlWarning">
+        <span>⚠️</span>
+        <span>لم يتم إعداد رابط الـ API بعد. أدخل الرابط أدناه واضغط "حفظ والاتصال" لتفعيل جلب البيانات.</span>
+      </div>
+      <label class="settings-label" for="settingsApiUrlInput">رابط الـ Google Apps Script API</label>
+      <input type="url" id="settingsApiUrlInput" class="settings-input" placeholder="https://script.google.com/macros/s/XXXXXXXX/exec" dir="ltr">
+      <div class="settings-hint">يتم حفظ الرابط محليًا على هذا الجهاز فقط (localStorage). ستقوم اللوحة بجلب البيانات من هذا الرابط تلقائيًا حسب فاصل التحديث المحدد أدناه.</div>
+      <button class="icon-btn settings-save-btn" id="settingsSaveBtn" type="button">حفظ والاتصال</button>
+
+      <div class="settings-divider"></div>
+
+      <label class="settings-label" for="autoRefreshSelect">التحديث التلقائي</label>
+      <select id="autoRefreshSelect" class="settings-input">
+        <option value="0">إيقاف (Off)</option>
+        <option value="1">كل دقيقة (1 Minute)</option>
+        <option value="5">كل 5 دقائق (5 Minutes)</option>
+        <option value="15">كل 15 دقيقة (15 Minutes)</option>
+        <option value="30">كل 30 دقيقة (30 Minutes)</option>
+      </select>
+
+      <div class="settings-row-actions">
+        <button class="icon-btn settings-refresh-btn" id="refreshNowBtn" type="button">⟳ تحديث الآن</button>
+        <span class="settings-cache-note" id="lastCacheNote"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// RAW_DATA removed: data is now fetched live from the Google Apps Script API (see API_URL / fetch logic below).
+const RAW_DATA = [];
+
+// ---------- Embedded demo/sample data ----------
+// Used automatically on startup whenever no Google Apps Script API URL is configured,
+// so the dashboard is always populated and browsable instead of showing a blocked/empty state.
+// Field names already match the normalized shape expected by buildData().
+const DEMO_DATA = [
+  { id:'90001', owner:'Amir', admin:'Mariam Eid', complainant:'Yolive - يوليفي', policy:'ARV70001', content:'الراسل معترض على تحمل تكلفة الوزن الزايد بدون الرجوع اليه وابلاغه', type:'شكوى تخص الحسابات', date_added:'2026-06-15', month:'يونيو', branch:'الشرقيه', classification:'وزن زائد', investigation_result:'تم ابلاغ الوكيل و تم قبول التعويض بعد المراجعة', status:'تم قبول التعويض', compensation_amount:50, compensation_bearer:'الشركه', compensation_review_result:'To be paid', confirm_review:'TRUE', review_date:'2026-06-18', sla_days:2, faulty_person:'التوني الشرقيه', notes:'' },
+  { id:'90002', owner:'روان', admin:'Hager Shaban', complainant:'Gogoo - جوجو', policy:'RV70002', content:'الراسل موضح ان القطعه وصلته تالفة والفلاير غير سليم', type:'شكوى تخص المرتجعات', date_added:'2026-06-15', month:'يونيو', branch:'الرئيسى', classification:'شحنه هالكه', investigation_result:'تم التبليغ على جروب المرتجعات', status:'تم قبول التعويض', compensation_amount:220, compensation_bearer:'الشركه', compensation_review_result:'To be paid', confirm_review:'TRUE', review_date:'2026-06-16', sla_days:1, faulty_person:'', notes:'' },
+  { id:'90003', owner:'Amir', admin:'Merna Hany', complainant:'فكرة - Fekra', policy:'ARV70003', content:'شحنة مفقودة لا يوجد ابديت منذ عدة ايام', type:'شكوى تخص المرتجعات', date_added:'2026-06-15', month:'يونيو', branch:'البحيره', classification:'تاخير مرتجع', investigation_result:'في انتظار افادة الوكيل', status:'تم رفض التعويض', compensation_amount:null, compensation_bearer:null, compensation_review_result:null, confirm_review:'TRUE', review_date:'2026-06-17', sla_days:2, faulty_person:'وكيل البحيره', notes:'' },
+  { id:'90004', owner:'روان', admin:'Mariam Eid', complainant:'pandora', policy:'RV70004', content:'الراسل معترض ان الاوردر وصل للعميله متكسر', type:'شكوى تخص التوصيل', date_added:'2026-06-15', month:'يونيو', branch:'المنوفيه', classification:'شحنه هالكه', investigation_result:'المندوب اكد تسليم الشحنه سليمة من الفرع', status:'تم رفض التعويض', compensation_amount:null, compensation_bearer:null, compensation_review_result:null, confirm_review:'TRUE', review_date:'2026-06-18', sla_days:3, faulty_person:'المنشاوى', notes:'' },
+  { id:'90005', owner:'منة', admin:'Amany Hassan', complainant:'Creativo - كرياتيفو', policy:'ARV70005', content:'الاوردر عباره عن كابل شحن وراس شاحن ووصل ناقص', type:'شكوى تخص المرتجعات', date_added:'2026-06-15', month:'يونيو', branch:'not mentioned', classification:'مرتجع مفقود', investigation_result:'الاوردر وصل للعميله مقفول وفتحت امام المندوب', status:'تم رفض التعويض', compensation_amount:null, compensation_bearer:null, compensation_review_result:null, confirm_review:'TRUE', review_date:'2026-06-18', sla_days:3, faulty_person:'', notes:'' },
+  { id:'90006', owner:'Amir', admin:'Mostafa Nasr', complainant:'Civa - سيفا', policy:'ARV70006', content:'رجع للراسل محتوى غير محتوى القطعه', type:'شكوى تخص المرتجعات', date_added:'2026-06-15', month:'يونيو', branch:'الهرم', classification:'مرتجع متبدل', investigation_result:'تم التواصل مع المندوب وتأكيد استلام الشحنه', status:'تم رفض التعويض', compensation_amount:null, compensation_bearer:null, compensation_review_result:null, confirm_review:'TRUE', review_date:'2026-06-18', sla_days:3, faulty_person:'احمد سمير', notes:'' },
+  { id:'90007', owner:'منة', admin:'Aya Atef', complainant:'ياقوت استور', policy:'RV70007', content:'كان من المفترض رجوع قطعتين وتم رجوع قطعه واحده فقط', type:'شكوى تخص المرتجعات', date_added:'2026-06-15', month:'يونيو', branch:'not mentioned', classification:'مرتجع مفقود', investigation_result:'جارى مراجعة الكاميرات للتأكد من محتوى المرتجع', status:'جارى التحقيق', compensation_amount:null, compensation_bearer:null, compensation_review_result:null, confirm_review:'TRUE', review_date:null, sla_days:null, faulty_person:'', notes:'' },
+  { id:'90008', owner:'روان', admin:'Hager Shaban', complainant:'اخوان عثماني للملابس الداخليه', policy:'MR70008', content:'العميل دافع مصاريف شحن اكثر من المطلوب', type:'شكوى تخص التوصيل', date_added:'2026-06-15', month:'يونيو', branch:'not mentioned', classification:'خطأ راسل', investigation_result:'تم التواصل مع المرسل اليه وتأكيد المبلغ الصحيح', status:'تم رفض التعويض', compensation_amount:null, compensation_bearer:null, compensation_review_result:null, confirm_review:'TRUE', review_date:'2026-06-21', sla_days:6, faulty_person:'', notes:'' },
+  { id:'90009', owner:'منة', admin:'Merna Hany', complainant:'Skin Soap - سكين سوب', policy:'ARV70009', content:'الشحنة متقفلة تهرب بعد الوصول ولا يوجد اثبات', type:'شكوى تخص الحسابات', date_added:'2026-06-15', month:'يونيو', branch:'الصعيد', classification:'سلوك مندوب', investigation_result:'لا يوجد اثبات تهرب من الوكيل', status:'تم قبول التعويض', compensation_amount:100, compensation_bearer:'الشركه', compensation_review_result:'To be paid', confirm_review:'TRUE', review_date:'2026-06-17', sla_days:2, faulty_person:'ادم الصعيد', notes:'' },
+  { id:'90010', owner:'منة', admin:'FirsTOne Fashion', complainant:'FirsTOne Fashion', policy:'', content:'الاوردر داخل رفض استلام والشحن المدفوع اقل من المطلوب', type:'شكوى تخص الحسابات', date_added:'2026-06-14', month:'يونيو', branch:'القليوبيه', classification:'سلوك مندوب', investigation_result:'مراجعة المندوب وتأكيد المبلغ المدفوع', status:'تم رفض التعويض', compensation_amount:null, compensation_bearer:null, compensation_review_result:null, confirm_review:'TRUE', review_date:'2026-06-17', sla_days:3, faulty_person:'', notes:'' },
+  { id:'90011', owner:'روان', admin:'FirsTOne Fashion', complainant:'FirsTOne Fashion', policy:'', content:'الاوردر تسليم جزئي واقل من السعر المتفق عليه', type:'شكوى تخص الحسابات', date_added:'2026-06-14', month:'يونيو', branch:'مدينه نصر', classification:'سلوك مندوب', investigation_result:'تم ابلاغ الاوبريشن على الجروب', status:'تم قبول التعويض', compensation_amount:60, compensation_bearer:'مندوب', compensation_review_result:'To be paid', confirm_review:'TRUE', review_date:'2026-06-16', sla_days:2, faulty_person:'محمد الجزار', notes:'' },
+  { id:'90012', owner:'روان', admin:'Mostafa Nasr', complainant:'Miss candy - ميس كاندى', policy:'AV70012', content:'العميل دفع اكثر من المبلغ المقفول على السيستم', type:'شكوى تخص أداء المناديب', date_added:'2026-06-14', month:'يونيو', branch:'المنوفيه', classification:'سلوك مندوب', investigation_result:'تم التواصل مع المرسل اليه لتأكيد المبلغ', status:'تم قبول التعويض', compensation_amount:10, compensation_bearer:'الشركه', compensation_review_result:'To be paid', confirm_review:'TRUE', review_date:'2026-06-17', sla_days:3, faulty_person:'المنشاوى', notes:'' },
+  { id:'90013', owner:'منة', admin:'Amany Hassan', complainant:'Creativo - كرياتيفو', policy:'ARV70013', content:'العميل بلغ ان الاوردر لم يصل ضمن المرتجعات', type:'شكوى تخص المرتجعات', date_added:'2026-06-14', month:'يونيو', branch:'الرئيسى', classification:'مرتجع مفقود', investigation_result:'تبين ان الشحنه لم يتم ارجاعها فى نفس اليوم', status:'تم قبول التعويض', compensation_amount:375, compensation_bearer:'المرتجعات', compensation_review_result:'To be paid', confirm_review:'TRUE', review_date:'2026-06-17', sla_days:3, faulty_person:'', notes:'' },
+  { id:'90014', owner:'منة', admin:'Mostafa Nasr', complainant:'OREA', policy:'AV70014', content:'الاوردر كان قطعتين ورجع قطعه واحده', type:'شكوى تخص المرتجعات', date_added:'2026-06-13', month:'يونيو', branch:'اسكندريه', classification:'مرتجع متبدل', investigation_result:'تم العثور على القطعه لدى عميل آخر', status:'تم رفض التعويض', compensation_amount:null, compensation_bearer:null, compensation_review_result:null, confirm_review:'TRUE', review_date:'2026-07-01', sla_days:18, faulty_person:'احمد عادل محمود', notes:'' },
+  { id:'90015', owner:'منة', admin:'Nada Mohamed', complainant:'italian express - ايطاليان اكسبريس', policy:'AV70015', content:'وزن الشحنه اتغير بدون ابلاغ الابعاد المستخدمة', type:'شكوى تخص التوصيل', date_added:'2026-06-13', month:'يونيو', branch:'not mentioned', classification:'وزن زائد', investigation_result:'لا يوجد ابعاد حقيقية تثبت زيادة الوزن', status:'تم رفض التعويض', compensation_amount:null, compensation_bearer:null, compensation_review_result:null, confirm_review:'TRUE', review_date:'2026-06-14', sla_days:1, faulty_person:'', notes:'' },
+  { id:'90016', owner:'روان', admin:'Nada Mohamed', complainant:'Raz_راز', policy:'', content:'اختلاف فى عدد الشحنات المستلمة من المندوب', type:'شكوى تخص التوصيل', date_added:'2026-06-09', month:'يونيو', branch:'الرئيسى', classification:'شحنه مفقوده', investigation_result:'جارى مراجعة الكاميرات وتفريغها', status:'جارى التحقيق', compensation_amount:null, compensation_bearer:null, compensation_review_result:null, confirm_review:'TRUE', review_date:null, sla_days:null, faulty_person:'', notes:'' },
+  { id:'90017', owner:'منة', admin:'Reham Hamdy', complainant:'ايزيس - ezzis', policy:'ARV70017', content:'الاوردر رجع للراسل فيه تلف وتم ارسال الصور', type:'شكوى تخص التوصيل', date_added:'2026-06-11', month:'يونيو', branch:'حدائق القبه', classification:'شحنه هالكه', investigation_result:'تم ابلاغ الاوبريشن على الجروب', status:'التعويض مسبقا', compensation_amount:1195, compensation_bearer:'مندوب', compensation_review_result:'تم التعويض مسبقا', confirm_review:'TRUE', review_date:'2026-06-16', sla_days:5, faulty_person:'محمد الجزار', notes:'الشحنه تم التعويض عنها مسبقا' },
+  { id:'90018', owner:'منة', admin:'Reham Hamdy', complainant:'حياه - Hayah', policy:'ARV70018', content:'الاوردر رجع للراسل خطأ منتجات غير خاصة به', type:'شكوى تخص المرتجعات', date_added:'2026-06-11', month:'يونيو', branch:'المؤسسه', classification:'مرتجع متبدل', investigation_result:'المرتجع واضح انه جديد ومتبدل مع اكونت آخر', status:'تم قبول التعويض', compensation_amount:1345, compensation_bearer:'موظف اوبريشين', compensation_review_result:'To be paid', confirm_review:'TRUE', review_date:'2026-06-16', sla_days:5, faulty_person:'مدحت سعيد', notes:'' },
+  { id:'90019', owner:'منة', admin:'Amany Hassan', complainant:'ميكس اند ماكس', policy:'ARV70019', content:'المرسل اليه بلغت انها دفعت مصاريف شحن اعلى', type:'شكوى تخص التوصيل', date_added:'2026-05-20', month:'مايو', branch:'الشرقيه', classification:'خطأ وكيل', investigation_result:'العميله لا ترد على المكالمات للمراجعة', status:'غير محدد', compensation_amount:null, compensation_bearer:null, compensation_review_result:null, confirm_review:'', review_date:null, sla_days:1, faulty_person:'', notes:'' },
+  { id:'90020', owner:'Amir', admin:'KHM Womens wear', complainant:'KHM Womens wear', policy:'', content:'تحصيل الاوردر اقل من المتفق عليه والفرق مطلوب رده', type:'شكوى تخص الحسابات', date_added:'2026-05-18', month:'مايو', branch:'الصعيد', classification:'عدم تنفيذ طلب خاص بالعميل', investigation_result:'تم ابلاغ الوكيل ولم يتم الرد بافادة', status:'تم قبول التعويض', compensation_amount:70, compensation_bearer:'وكيل', compensation_review_result:'To be paid', confirm_review:'TRUE', review_date:'2026-06-16', sla_days:4, faulty_person:'احمد نصر', notes:'' },
+];
+
+// ---------- Normalize ----------
+function normDate(s){
+  if(!s) return null;
+  if(/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0,10);
+  const m = s.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+  if(m) return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+  return s;
+}
+
+const STATUS_MAP = {
+  'تم قبول التعويض': {cls:'accepted', label:'مقبول'},
+  'تم رفض التعويض': {cls:'rejected', label:'مرفوض'},
+  'جارى التحقيق': {cls:'pending', label:'قيد التحقيق'},
+  'التعويض مسبقا': {cls:'accepted', label:'معوّض سابقًا'},
+  'غير محدد': {cls:'neutral', label:'غير محدد'}
+};
+
+// DATA is now populated dynamically from the API instead of a static embed.
+// buildData() normalizes a raw records array (same shape as before) into DATA.
+let DATA = [];
+function buildData(raw){
+  return (raw||[]).map(d => ({
+    ...d,
+    date_added: normDate(d.date_added),
+    review_date: normDate(d.review_date),
+    status: (d.status||'غير محدد').trim(),
+    owner: (d.owner||'غير محدد').trim(),
+    branch: (d.branch||'غير محدد').trim(),
+    type: (d.type||'غير محدد').trim(),
+    classification: (d.classification||'غير مصنف').trim(),
+    compensation_bearer: d.compensation_bearer ? d.compensation_bearer.trim() : null,
+    compensation_review_result: d.compensation_review_result ? d.compensation_review_result.trim() : null,
+    confirm_review: d.confirm_review ? d.confirm_review.trim() : null,
+  }));
+}
+
+// ---------- Populate filter dropdowns ----------
+function uniqueSorted(key){
+  return [...new Set(DATA.map(d => d[key]).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ar'));
+}
+function fillSelect(id, values){
+  const sel = document.getElementById(id);
+  // keep the first ("الكل" / all) option, clear any previously injected options
+  while(sel.options.length > 1){ sel.remove(1); }
+  values.forEach(v=>{
+    const opt = document.createElement('option');
+    opt.value = v; opt.textContent = v;
+    sel.appendChild(opt);
+  });
+}
+const monthOrder = ['يناير','فبراير','مارس','ابريل','أبريل','مايو','يونيو','يوليو','اغسطس','أغسطس','سبتمبر','اكتوبر','أكتوبر','نوفمبر','ديسمبر'];
+let months = [];
+let dates = [];
+let reviewDates = [];
+
+// Populates filter dropdowns from current DATA. Safe to call again after a
+// refresh — selections are preserved where the value still exists.
+function populateFilters(){
+  const selectIds = ['fOwner','fBranch','fType','fStatus','fBearer','fReviewResult','fSender','fMonth'];
+  const previousValues = {};
+  selectIds.forEach(id=>{ previousValues[id] = document.getElementById(id).value; });
+
+  fillSelect('fOwner', uniqueSorted('owner'));
+  fillSelect('fBranch', uniqueSorted('branch'));
+  fillSelect('fType', uniqueSorted('type'));
+  fillSelect('fStatus', uniqueSorted('status'));
+  fillSelect('fBearer', uniqueSorted('compensation_bearer'));
+  fillSelect('fReviewResult', uniqueSorted('compensation_review_result'));
+  fillSelect('fSender', uniqueSorted('complainant'));
+  months = uniqueSorted('month').sort((a,b)=> monthOrder.indexOf(a)-monthOrder.indexOf(b));
+  fillSelect('fMonth', months);
+
+  selectIds.forEach(id=>{
+    const sel = document.getElementById(id);
+    if(previousValues[id] && [...sel.options].some(o=>o.value === previousValues[id])){
+      sel.value = previousValues[id];
+    }
+  });
+}
+
+// Updates the header meta bar / date-range inputs from current DATA. Safe to
+// call repeatedly (e.g. after every auto-refresh).
+function updateMetaBar(){
+  document.getElementById('metaTotal').textContent = DATA.length;
+  document.getElementById('metaBranches').textContent = uniqueSorted('branch').length;
+  const totalComp = DATA.reduce((s,d)=> s + (typeof d.compensation_amount==='number' ? d.compensation_amount : 0), 0);
+  document.getElementById('metaComp').textContent = totalComp.toLocaleString('en-US');
+  dates = DATA.map(d=>d.date_added).filter(Boolean).sort();
+  if(dates.length){
+    document.getElementById('dateRangeLabel').textContent = `الفترة المشمولة: ${dates[0]} — ${dates[dates.length-1]}`;
+    ['fDateFrom','fDateTo'].forEach(id=>{
+      document.getElementById(id).min = dates[0];
+      document.getElementById(id).max = dates[dates.length-1];
+    });
+  }
+  reviewDates = DATA.map(d=>d.review_date).filter(Boolean).sort();
+  if(reviewDates.length){
+    ['fReviewFrom','fReviewTo'].forEach(id=>{
+      document.getElementById(id).min = reviewDates[0];
+      document.getElementById(id).max = reviewDates[reviewDates.length-1];
+    });
+  }
+}
+
+let barcodesDrawn = false;
+function drawBarcodes(){
+  if(barcodesDrawn) return;
+  barcodesDrawn = true;
+  ['bc1','bc2','bc3','bc4','bc5'].forEach(id=>{
+    const el = document.getElementById(id);
+    let html='';
+    for(let i=0;i<14;i++){
+      const w = Math.random()>0.7 ? 2 : 1;
+      const h = 8 + Math.random()*12;
+      html += `<i style="width:${w}px;height:${h}px;"></i>`;
+    }
+    el.innerHTML = html;
+  });
+}
+
+// ---------- Chart instances ----------
+Chart.defaults.font.family = "'IBM Plex Sans Arabic', sans-serif";
+Chart.defaults.color = '#5B6478';
+Chart.defaults.font.size = 11.5;
+
+const palette = {
+  navy:'#2C4257', gold:'#A9832E', accepted:'#3F7D58', rejected:'#B5473F', pending:'#C08A2E', neutral:'#8E96A6',
+  soft:['#2C4257','#4A6178','#7B8DA0','#A9832E','#C4A45E','#3F7D58','#6FA684','#B5473F','#CC7B75','#8E96A6']
+};
+
+let chartTrend, chartStatus, chartBranch, chartType, chartClassification, chartBearer, chartReviewResult;
+
+function makeCharts(){
+  const ctxTrend = document.getElementById('chartTrend');
+  chartTrend = new Chart(ctxTrend, {
+    type:'line',
+    data:{ labels:[], datasets:[{ data:[], borderColor:palette.navy, backgroundColor:'rgba(44,66,87,0.08)', fill:true, tension:.3, pointRadius:2, pointBackgroundColor:palette.navy, borderWidth:2 }]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{ rtl:true, titleFont:{family:"'IBM Plex Mono',monospace"} } },
+      scales:{ x:{ grid:{display:false}, ticks:{maxRotation:0, autoSkip:true, maxTicksLimit:10} }, y:{ beginAtZero:true, grid:{color:'#EEEDE6'}, ticks:{precision:0} } }
+    }
+  });
+
+  chartStatus = new Chart(document.getElementById('chartStatus'), {
+    type:'doughnut',
+    data:{ labels:[], datasets:[{ data:[], backgroundColor:[], borderWidth:3, borderColor:'#fff' }]},
+    options:{
+      responsive:true, maintainAspectRatio:false, cutout:'62%',
+      plugins:{ legend:{ position:'bottom', rtl:true, labels:{ usePointStyle:true, boxWidth:8, padding:14 } } }
+    }
+  });
+
+  chartBranch = new Chart(document.getElementById('chartBranch'), {
+    type:'bar',
+    data:{ labels:[], datasets:[{ data:[], backgroundColor:palette.navy, borderRadius:4, maxBarThickness:16 }]},
+    options:{
+      indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false} },
+      scales:{ x:{ beginAtZero:true, grid:{color:'#EEEDE6'}, ticks:{precision:0} }, y:{ grid:{display:false} } }
+    }
+  });
+
+  chartType = new Chart(document.getElementById('chartType'), {
+    type:'bar',
+    data:{ labels:[], datasets:[{ data:[], backgroundColor:palette.gold, borderRadius:4, maxBarThickness:26 }]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false} },
+      scales:{ x:{ grid:{display:false}, ticks:{ autoSkip:false, maxRotation:26, minRotation:0, font:{size:10.5} } }, y:{ beginAtZero:true, grid:{color:'#EEEDE6'}, ticks:{precision:0} } }
+    }
+  });
+
+  chartClassification = new Chart(document.getElementById('chartClassification'), {
+    type:'bar',
+    data:{ labels:[], datasets:[{ data:[], backgroundColor:palette.accepted, borderRadius:4, maxBarThickness:16 }]},
+    options:{
+      indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false} },
+      scales:{ x:{ beginAtZero:true, grid:{color:'#EEEDE6'}, ticks:{precision:0} }, y:{ grid:{display:false} } }
+    }
+  });
+
+  chartBearer = new Chart(document.getElementById('chartBearer'), {
+    type:'bar',
+    data:{ labels:[], datasets:[
+      { label:'إجمالي التعويض (ج.م)', data:[], backgroundColor:palette.gold, borderRadius:4, maxBarThickness:22, yAxisID:'y' },
+      { label:'عدد الحالات', data:[], backgroundColor:'rgba(44,66,87,0.35)', borderRadius:4, maxBarThickness:22, yAxisID:'y1' }
+    ]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ position:'bottom', rtl:true, labels:{ usePointStyle:true, boxWidth:8, padding:14 } } },
+      scales:{
+        x:{ grid:{display:false} },
+        y:{ position:'left', beginAtZero:true, grid:{color:'#EEEDE6'}, title:{display:true, text:'ج.م', font:{size:10.5}} },
+        y1:{ position:'right', beginAtZero:true, grid:{display:false}, ticks:{precision:0}, title:{display:true, text:'حالات', font:{size:10.5}} }
+      }
+    }
+  });
+
+  chartReviewResult = new Chart(document.getElementById('chartReviewResult'), {
+    type:'doughnut',
+    data:{ labels:[], datasets:[{ data:[], backgroundColor:palette.soft, borderWidth:3, borderColor:'#fff' }]},
+    options:{
+      responsive:true, maintainAspectRatio:false, cutout:'62%',
+      plugins:{ legend:{ position:'bottom', rtl:true, labels:{ usePointStyle:true, boxWidth:8, padding:14 } } }
+    }
+  });
+}
+makeCharts();
+
+// ---------- Filtering ----------
+function getFiltered(){
+  const owner = document.getElementById('fOwner').value;
+  const branch = document.getElementById('fBranch').value;
+  const type = document.getElementById('fType').value;
+  const status = document.getElementById('fStatus').value;
+  const month = document.getElementById('fMonth').value;
+  const sender = document.getElementById('fSender').value;
+  const dateFrom = document.getElementById('fDateFrom').value;
+  const dateTo = document.getElementById('fDateTo').value;
+  const search = document.getElementById('fSearch').value.trim().toLowerCase();
+  const bearer = document.getElementById('fBearer').value;
+  const reviewResult = document.getElementById('fReviewResult').value;
+  const confirm = document.getElementById('fConfirm').value;
+  const reviewFrom = document.getElementById('fReviewFrom').value;
+  const reviewTo = document.getElementById('fReviewTo').value;
+
+  return DATA.filter(d=>{
+    if(owner && d.owner !== owner) return false;
+    if(branch && d.branch !== branch) return false;
+    if(type && d.type !== type) return false;
+    if(status && d.status !== status) return false;
+    if(month && d.month !== month) return false;
+    if(sender && d.complainant !== sender) return false;
+    if(dateFrom && (!d.date_added || d.date_added < dateFrom)) return false;
+    if(dateTo && (!d.date_added || d.date_added > dateTo)) return false;
+    if(bearer && d.compensation_bearer !== bearer) return false;
+    if(reviewResult && d.compensation_review_result !== reviewResult) return false;
+    if(confirm === 'yes' && !d.confirm_review) return false;
+    if(confirm === 'no' && d.confirm_review) return false;
+    if(reviewFrom && (!d.review_date || d.review_date < reviewFrom)) return false;
+    if(reviewTo && (!d.review_date || d.review_date > reviewTo)) return false;
+    if(search){
+      // Advanced search: complaint ID, policy, merchant/sender name, branch, employee, content —
+      // supports multiple keywords (all must match, AND) and partial matching.
+      const hay = `${d.complainant||''} ${d.content||''} ${d.policy||''} ${d.id||''} ${d.branch||''} ${d.owner||''} ${d.faulty_person||''} ${d.admin||''} ${d.classification||''}`.toLowerCase();
+      const tokens = search.split(/\s+/).filter(Boolean);
+      if(!tokens.every(tok => hay.includes(tok))) return false;
+    }
+    if(extraFilter && !extraFilter(d)) return false;
+    return true;
+  });
+}
+
+// ---------- Enterprise: active alert-driven extra filter ----------
+let extraFilter = null;
+let extraFilterLabel = '';
+function setExtraFilter(fn, label){
+  extraFilter = fn; extraFilterLabel = label; render();
+}
+function clearExtraFilter(){ extraFilter = null; extraFilterLabel = ''; render(); }
+
+let sortKey = 'date_added', sortDir = -1;
+// ---------- Visual improvement: smooth count-up animation for KPI numbers ----------
+function animateNumber(el, toValue, opts={}){
+  if(!el) return;
+  const decimals = opts.decimals || 0;
+  const suffix = opts.suffix || '';
+  const toNum = Number(toValue) || 0;
+  const fromNum = parseFloat(el.dataset.rawVal || '0') || 0;
+  el.dataset.rawVal = toNum;
+  const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(reduceMotion || Math.abs(toNum-fromNum) < (decimals?0.05:1)){
+    el.innerHTML = toNum.toFixed(decimals)+suffix;
+    return;
+  }
+  const duration = 450;
+  const start = performance.now();
+  function step(now){
+    const t = Math.min(1, (now-start)/duration);
+    const eased = 1 - Math.pow(1-t, 3);
+    const val = fromNum + (toNum-fromNum)*eased;
+    el.innerHTML = val.toFixed(decimals)+suffix;
+    if(t<1) requestAnimationFrame(step);
+    else el.innerHTML = toNum.toFixed(decimals)+suffix;
+  }
+  requestAnimationFrame(step);
+}
+
+function render(){
+  const rows = getFiltered();
+  document.getElementById('resultCount').textContent = rows.length;
+
+  // KPIs
+  const total = rows.length;
+  const accepted = rows.filter(d=> d.status.includes('قبول') || d.status.includes('مسبقا')).length;
+  const rejected = rows.filter(d=> d.status.includes('رفض')).length;
+  const pending = rows.filter(d=> d.status.includes('جارى') || d.status.includes('التحقيق')).length;
+  const decided = accepted + rejected;
+  const acceptRate = decided ? Math.round((accepted/decided)*100) : 0;
+  const slaVals = rows.map(d=>d.sla_days).filter(v=> typeof v === 'number');
+  const avgSla = slaVals.length ? (slaVals.reduce((a,b)=>a+b,0)/slaVals.length) : 0;
+  const compSum = rows.reduce((s,d)=> s + (typeof d.compensation_amount==='number'?d.compensation_amount:0), 0);
+
+  document.getElementById('kpiTotalSub').textContent = `${uniqueVals(rows,'branch').length} فرعًا · ${uniqueVals(rows,'owner').length} مسؤول`;
+  animateNumber(document.getElementById('kpiTotal'), total);
+  document.getElementById('kpiAcceptSub').textContent = `${accepted} حالة من أصل ${decided} تم البتّ فيها`;
+  animateNumber(document.getElementById('kpiAcceptRate'), acceptRate, { suffix:'<sup>%</sup>' });
+  document.getElementById('kpiRejectedSub').textContent = decided ? `${Math.round((rejected/decided)*100)}% من الحالات المقررة` : '—';
+  animateNumber(document.getElementById('kpiRejected'), rejected);
+  document.getElementById('kpiPendingSub').textContent = `من أصل ${total} شكوى`;
+  animateNumber(document.getElementById('kpiPending'), pending);
+  document.getElementById('kpiSlaSub').textContent = `إجمالي التعويض ${compSum.toLocaleString('en-US')} ج.م`;
+  animateNumber(document.getElementById('kpiSla'), avgSla, { decimals:1 });
+
+  updateCharts(rows);
+  updateTable(rows);
+
+  renderCoreExecutiveMetrics(rows);
+  renderHealthScore(rows);
+  renderExecutiveSnapshot(rows);
+  renderAlerts(rows);
+  renderActionCenter(rows);
+  renderExecutiveSummary(rows);
+  renderInsights(rows);
+  renderTopPerformers(rows);
+  renderHandlerPerformance(rows);
+  renderKpiEnhancements(rows);
+  updateLiveStats(rows);
+}
+
+function uniqueVals(rows, key){ return [...new Set(rows.map(r=>r[key]).filter(Boolean))]; }
+
+function topN(rows, key, n, filterFn){
+  const counts = {};
+  rows.forEach(d=>{
+    let v = d[key];
+    if(filterFn && !filterFn(d)) return;
+    if(!v) return;
+    if(key==='type' && v.length>60){ return; } // skip malformed combined-type rows
+    counts[v] = (counts[v]||0)+1;
+  });
+  return Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,n);
+}
+
+function updateCharts(rows){
+  // trend
+  const byDate = {};
+  rows.forEach(d=>{ if(d.date_added){ byDate[d.date_added] = (byDate[d.date_added]||0)+1; } });
+  const dateKeys = Object.keys(byDate).sort();
+  chartTrend.data.labels = dateKeys.map(d=>d.slice(5));
+  chartTrend.data.datasets[0].data = dateKeys.map(d=>byDate[d]);
+  chartTrend.update();
+
+  // status
+  const statusCounts = {};
+  rows.forEach(d=>{ statusCounts[d.status] = (statusCounts[d.status]||0)+1; });
+  const sLabels = Object.keys(statusCounts);
+  chartStatus.data.labels = sLabels.map(s => STATUS_MAP[s] ? STATUS_MAP[s].label : s);
+  chartStatus.data.datasets[0].data = sLabels.map(s=>statusCounts[s]);
+  chartStatus.data.datasets[0].backgroundColor = sLabels.map(s=>{
+    const c = STATUS_MAP[s] ? STATUS_MAP[s].cls : 'neutral';
+    return {accepted:palette.accepted, rejected:palette.rejected, pending:palette.pending, neutral:palette.neutral}[c];
+  });
+  chartStatus.update();
+
+  // branch top 10
+  const branchTop = topN(rows, 'branch', 10);
+  chartBranch.data.labels = branchTop.map(x=>x[0]);
+  chartBranch.data.datasets[0].data = branchTop.map(x=>x[1]);
+  chartBranch.update();
+
+  // type
+  const typeTop = topN(rows, 'type', 8);
+  chartType.data.labels = typeTop.map(x=>x[0].replace('شكوى تخص ',''));
+  chartType.data.datasets[0].data = typeTop.map(x=>x[1]);
+  chartType.update();
+
+  // classification
+  const classTop = topN(rows, 'classification', 8);
+  chartClassification.data.labels = classTop.map(x=>x[0]);
+  chartClassification.data.datasets[0].data = classTop.map(x=>x[1]);
+  chartClassification.update();
+
+  // compensation by bearer (amount + count)
+  const bearerAgg = {};
+  rows.forEach(d=>{
+    if(!d.compensation_bearer) return;
+    if(!bearerAgg[d.compensation_bearer]) bearerAgg[d.compensation_bearer] = {amount:0, count:0};
+    bearerAgg[d.compensation_bearer].count += 1;
+    if(typeof d.compensation_amount === 'number') bearerAgg[d.compensation_bearer].amount += d.compensation_amount;
+  });
+  const bearerEntries = Object.entries(bearerAgg).sort((a,b)=> b[1].amount - a[1].amount);
+  chartBearer.data.labels = bearerEntries.map(x=>x[0]);
+  chartBearer.data.datasets[0].data = bearerEntries.map(x=>x[1].amount);
+  chartBearer.data.datasets[1].data = bearerEntries.map(x=>x[1].count);
+  chartBearer.update();
+
+  // compensation review result
+  const reviewCounts = {};
+  rows.forEach(d=>{
+    if(!d.compensation_review_result) return;
+    reviewCounts[d.compensation_review_result] = (reviewCounts[d.compensation_review_result]||0)+1;
+  });
+  const reviewEntries = Object.entries(reviewCounts).sort((a,b)=>b[1]-a[1]);
+  chartReviewResult.data.labels = reviewEntries.map(x=>x[0]);
+  chartReviewResult.data.datasets[0].data = reviewEntries.map(x=>x[1]);
+  chartReviewResult.update();
+}
+
+function statusBadge(status){
+  const m = STATUS_MAP[status] || {cls:'neutral', label:status};
+  return `<span class="badge ${m.cls}">${m.label}</span>`;
+}
+
+function updateTable(rows){
+  const sorted = [...rows].sort((a,b)=>{
+    let va = a[sortKey], vb = b[sortKey];
+    if(sortKey==='compensation_amount'){ va = va||0; vb = vb||0; }
+    else { va = (va||'').toString(); vb = (vb||'').toString(); }
+    if(va < vb) return -1*sortDir;
+    if(va > vb) return 1*sortDir;
+    return 0;
+  });
+  const tbody = document.getElementById('tableBody');
+  if(!sorted.length){
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="9">لا توجد نتائج مطابقة لعوامل التصفية الحالية</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = sorted.map((d,i)=>`
+    <tr data-idx="${DATA.indexOf(d)}">
+      <td class="id-cell">${d.id ?? ''}</td>
+      <td class="num">${d.date_added ?? '—'}</td>
+      <td>${d.owner ?? ''}</td>
+      <td>${d.complainant ?? ''}</td>
+      <td>${(d.type||'').replace('شكوى تخص ','')}</td>
+      <td>${d.branch ?? ''}</td>
+      <td class="content-cell" title="${(d.content||'').replace(/"/g,'&quot;')}">${d.content ?? ''}</td>
+      <td>${statusBadge(d.status)}</td>
+      <td class="amount-cell">${typeof d.compensation_amount==='number' ? d.compensation_amount.toLocaleString('en-US') : '—'}</td>
+    </tr>
+  `).join('');
+
+  tbody.querySelectorAll('tr[data-idx]').forEach(tr=>{
+    tr.addEventListener('click', ()=> openModal(DATA[+tr.dataset.idx]));
+  });
+}
+
+// ---------- Sorting ----------
+document.querySelectorAll('#dataTable thead th[data-key]').forEach(th=>{
+  th.addEventListener('click', ()=>{
+    const key = th.dataset.key;
+    if(sortKey === key){ sortDir *= -1; } else { sortKey = key; sortDir = 1; }
+    document.querySelectorAll('#dataTable thead th .arrow').forEach(a=>a.textContent='');
+    th.querySelector('.arrow').textContent = sortDir===1 ? '▲' : '▼';
+    render();
+  });
+});
+
+// ---------- Modal ----------
+function field(label, value){
+  return `<div class="field"><div class="l">${label}</div><div class="v">${value ?? '—'}</div></div>`;
+}
+function fieldFull(label, value){
+  return `<div class="field full"><div class="l">${label}</div><div class="v">${value ?? '—'}</div></div>`;
+}
+function openModal(d){
+  const modal = document.getElementById('modal');
+  modal.innerHTML = `
+    <div class="modal-head">
+      <div>
+        <div class="mid">#${d.id ?? ''}</div>
+        <h2>${d.complainant ?? 'شكوى'}</h2>
+      </div>
+      <button class="modal-close" id="modalClose" aria-label="إغلاق">✕</button>
+    </div>
+    <div class="modal-body">
+      ${field('التاريخ', d.date_added)}
+      ${field('مسؤول الشكوى', d.owner)}
+      ${field('الفرع المتسبب', d.branch)}
+      ${field('نوع الشكوى', (d.type||'').replace('شكوى تخص ',''))}
+      ${field('تصنيف المشكلة', d.classification)}
+      ${field('رقم البوليصة', d.policy)}
+      ${fieldFull('محتوى الشكوى', d.content)}
+      ${field('نتيجة التحقيق', d.investigation_result)}
+      ${field('الحالة', statusBadge(d.status))}
+      ${field('مبلغ التعويض', typeof d.compensation_amount==='number' ? d.compensation_amount.toLocaleString('en-US')+' ج.م' : '—')}
+      ${field('يتحمل التعويض', d.compensation_bearer)}
+      ${fieldFull('ملاحظات', d.notes)}
+    </div>
+  `;
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('modalClose').addEventListener('click', closeModal);
+}
+function closeModal(){ document.getElementById('overlay').classList.remove('open'); }
+document.getElementById('overlay').addEventListener('click', e=>{ if(e.target.id==='overlay') closeModal(); });
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeModal(); });
+
+// ---------- Filter events ----------
+['fOwner','fBranch','fType','fStatus','fMonth','fSender','fDateFrom','fDateTo','fBearer','fReviewResult','fConfirm','fReviewFrom','fReviewTo'].forEach(id=>{
+  document.getElementById(id).addEventListener('change', render);
+});
+let searchTimer;
+document.getElementById('fSearch').addEventListener('input', ()=>{
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(render, 180);
+});
+document.getElementById('btnReset').addEventListener('click', ()=>{
+  ['fOwner','fBranch','fType','fStatus','fMonth','fSender','fDateFrom','fDateTo','fBearer','fReviewResult','fConfirm','fReviewFrom','fReviewTo'].forEach(id=> document.getElementById(id).value = '');
+  document.getElementById('fSearch').value = '';
+  extraFilter = null; extraFilterLabel = '';
+  render();
+});
+document.getElementById('qaResetAll').addEventListener('click', ()=> document.getElementById('btnReset').click());
+
+/* ======================================================
+   ENTERPRISE ADD-ONS — logic
+   ====================================================== */
+
+const REF_DATE = (dates.length ? new Date(dates[dates.length-1]) : new Date());
+function daysBetween(a,b){ return Math.round((a-b)/86400000); }
+
+// Shared helper: split rows into previous/current halves by date_added (same method already used by
+// KPI enhancements and handler trends) so every new "trend vs previous period" indicator is consistent.
+function splitByDateHalves(rows){
+  const dated = rows.filter(d=>d.date_added).slice().sort((a,b)=> a.date_added<b.date_added?-1:a.date_added>b.date_added?1:0);
+  if(dated.length < 4) return { prevHalf:[], currHalf:rows };
+  const mid = Math.floor(dated.length/2);
+  return { prevHalf: dated.slice(0,mid), currHalf: dated.slice(mid) };
+}
+// Generic trend badge for any two comparable numbers — shows ▲ improving / ▼ declining / ▬ stable.
+function kpiTrend(curr, prev, lowerIsBetter){
+  if(curr===null || curr===undefined || prev===null || prev===undefined || prev===0){
+    if(curr && !prev) return `<span class="kpi-trend-badge up">▲ جديد</span>`;
+    return `<span class="kpi-trend-badge flat">▬ مستقر</span>`;
+  }
+  const diffPct = ((curr-prev)/Math.abs(prev))*100;
+  if(Math.abs(diffPct) < 1) return `<span class="kpi-trend-badge flat">▬ مستقر</span>`;
+  const isUp = diffPct > 0;
+  const good = lowerIsBetter ? !isUp : isUp;
+  return `<span class="kpi-trend-badge ${good?'up':'down'}">${isUp?'▲':'▼'} ${Math.abs(diffPct).toFixed(0)}%</span>`;
+}
+
+// ---------- 1) Alert Center ----------
+function computeAlerts(rows){
+  const alerts = [];
+
+  // Complaints exceeding SLA target (7 days)
+  const slaBreach = rows.filter(d=> typeof d.sla_days==='number' && d.sla_days > 7);
+  alerts.push({
+    priority:'crit', emoji:'🔴', label:'حرج',
+    desc:'شكاوى تجاوزت مدة الحل المستهدفة (7 أيام)',
+    count: slaBreach.length,
+    onClick: ()=> setExtraFilter(d=> typeof d.sla_days==='number' && d.sla_days>7, 'شكاوى تجاوزت SLA')
+  });
+
+  // Complaint Handlers with rapidly increasing complaints (last 7 days vs previous 7 days)
+  const last7 = new Date(REF_DATE); last7.setDate(last7.getDate()-7);
+  const prev14 = new Date(REF_DATE); prev14.setDate(prev14.getDate()-14);
+  const fmt = x=> x.toISOString().slice(0,10);
+  const curCounts = {}, prevCounts = {};
+  rows.forEach(d=>{
+    if(!d.date_added) return;
+    if(d.date_added > fmt(last7)) curCounts[d.owner] = (curCounts[d.owner]||0)+1;
+    else if(d.date_added > fmt(prev14) && d.date_added <= fmt(last7)) prevCounts[d.owner] = (prevCounts[d.owner]||0)+1;
+  });
+  const risingHandlers = Object.keys(curCounts).filter(o=>{
+    const c = curCounts[o], p = prevCounts[o]||0;
+    return c >= 3 && c > p * 1.5;
+  });
+  alerts.push({
+    priority:'high', emoji:'🟡', label:'مرتفع',
+    desc:'معالجو شكاوى بهم ارتفاع سريع في عدد الشكاوى (آخر 7 أيام مقابل الأسبوع السابق)',
+    count: risingHandlers.length,
+    onClick: ()=> setExtraFilter(d=> risingHandlers.includes(d.owner), 'معالجو شكاوى بارتفاع سريع')
+  });
+
+  // Complaints waiting for compensation approval (accepted but amount not yet finalized)
+  const waitingApproval = rows.filter(d=> d.status && d.status.includes('قبول') && d.compensation_amount==null);
+  alerts.push({
+    priority:'low', emoji:'🟢', label:'منخفض',
+    desc:'شكاوى مقبولة بانتظار اعتماد قيمة التعويض',
+    count: waitingApproval.length,
+    onClick: ()=> setExtraFilter(d=> d.status && d.status.includes('قبول') && d.compensation_amount==null, 'بانتظار اعتماد التعويض')
+  });
+
+  // Complaints without investigation
+  const noInvestigation = rows.filter(d=> !d.investigation_result || !d.investigation_result.trim());
+  alerts.push({
+    priority:'crit', emoji:'🔴', label:'حرج',
+    desc:'شكاوى بدون نتيجة تحقيق مسجّلة',
+    count: noInvestigation.length,
+    onClick: ()=> setExtraFilter(d=> !d.investigation_result || !d.investigation_result.trim(), 'بدون تحقيق')
+  });
+
+  // Complaint Handlers exceeding open (unresolved) complaint threshold
+  const isOpenStatus = d=> d.status && (d.status.includes('جارى') || d.status.includes('التحقيق'));
+  const openHandlerTotals = {};
+  rows.forEach(d=>{ if(isOpenStatus(d)) openHandlerTotals[d.owner] = (openHandlerTotals[d.owner]||0)+1; });
+  const openThreshold = 5;
+  const overOpenThreshold = Object.keys(openHandlerTotals).filter(o=> openHandlerTotals[o] > openThreshold);
+  alerts.push({
+    priority:'high', emoji:'🟡', label:'مرتفع',
+    desc:`معالجو شكاوى تجاوزوا الحد الأقصى المسموح للشكاوى المفتوحة (${openThreshold} شكوى)`,
+    count: overOpenThreshold.length,
+    onClick: ()=> setExtraFilter(d=> isOpenStatus(d) && overOpenThreshold.includes(d.owner), `معالجو شكاوى تجاوزوا ${openThreshold} شكوى مفتوحة`)
+  });
+
+  // Complaints pending for more than 5 days
+  const pendingLong = rows.filter(d=>{
+    if(!(d.status && (d.status.includes('جارى') || d.status.includes('التحقيق')))) return false;
+    if(!d.date_added) return false;
+    return daysBetween(REF_DATE, new Date(d.date_added)) > 5;
+  });
+  alerts.push({
+    priority:'crit', emoji:'🔴', label:'حرج',
+    desc:'شكاوى قيد التحقيق منذ أكثر من 5 أيام',
+    count: pendingLong.length,
+    onClick: ()=> setExtraFilter(d=> d.status && (d.status.includes('جارى')||d.status.includes('التحقيق')) && d.date_added && daysBetween(REF_DATE,new Date(d.date_added))>5, 'قيد التحقيق > 5 أيام')
+  });
+
+  // High compensation: individual claims well above the average paid amount
+  const compVals = rows.map(d=> d.compensation_amount).filter(v=> typeof v==='number');
+  const compAvg = compVals.length ? compVals.reduce((a,b)=>a+b,0)/compVals.length : 0;
+  const compThreshold = compAvg * 2;
+  const highCompRows = compVals.length ? rows.filter(d=> typeof d.compensation_amount==='number' && d.compensation_amount > compThreshold && compThreshold>0) : [];
+  alerts.push({
+    priority:'high', emoji:'🟡', label:'مرتفع',
+    desc:`شكاوى بتعويض مرتفع بشكل غير معتاد (أكثر من ضعف متوسط التعويض الحالي البالغ ${Math.round(compAvg).toLocaleString('en-US')} ج.م)`,
+    count: highCompRows.length,
+    onClick: ()=> setExtraFilter(d=> typeof d.compensation_amount==='number' && d.compensation_amount>compThreshold && compThreshold>0, 'تعويضات مرتفعة بشكل غير معتاد')
+  });
+
+  // Handler performance drop: score declined meaningfully between the two halves of the current period
+  const trendsForAlert = computeHandlerTrends(rows);
+  const perfHandlers = computeHandlerPerformance(rows).filter(h=> h.count>0);
+  const droppingHandlers = perfHandlers.filter(h=> trendsForAlert[h.owner] === 'down' && h.score < 70).map(h=>h.owner);
+  alerts.push({
+    priority:'med', emoji:'🟠', label:'متوسط',
+    desc:'معالجو شكاوى بتراجع ملحوظ في درجة الأداء خلال الفترة الحالية',
+    count: droppingHandlers.length,
+    onClick: ()=> setExtraFilter(d=> droppingHandlers.includes(d.owner), 'تراجع في أداء المعالج')
+  });
+
+  return alerts;
+}
+
+function renderAlerts(rows){
+  const allAlerts = computeAlerts(rows);
+  // Categorize into 3 tiers (Critical / Warning / Information) and sort automatically by severity.
+  const tierMap = { crit:'critical', high:'warning', med:'warning', low:'info' };
+  const tierLabel = { critical:'حرج (Critical)', warning:'تحذير (Warning)', info:'معلومة (Information)' };
+  const tierRank = { critical:0, warning:1, info:2 };
+  const alerts = allAlerts
+    .filter(a=> a.count>0) // each alert disappears independently once its own condition clears
+    .map(a=> ({ ...a, tier: tierMap[a.priority], tierLabel: tierLabel[tierMap[a.priority]] }))
+    .sort((a,b)=> tierRank[a.tier]-tierRank[b.tier] || b.count-a.count);
+  const wrap = document.getElementById('alertCenter');
+  if(!alerts.length){
+    wrap.innerHTML = `<div class="alert-empty">لا توجد تنبيهات نشطة ضمن عوامل التصفية الحالية 👍</div>`;
+  } else {
+    wrap.innerHTML = alerts.map((a,i)=>`
+      <div class="alert-card ${a.priority}" data-idx="${i}">
+        <div class="alert-top">
+          <span class="alert-emoji">${a.emoji}</span>
+          <span class="alert-priority ${a.priority}">${a.tierLabel}</span>
+        </div>
+        <div class="alert-desc">${a.desc}</div>
+        <div class="alert-bottom">
+          <span class="alert-count num value-pop">${a.count}</span>
+          <span class="alert-cta">اضغط للتصفية ←</span>
+        </div>
+      </div>
+    `).join('');
+    wrap.querySelectorAll('.alert-card').forEach(card=>{
+      card.addEventListener('click', ()=> alerts[+card.dataset.idx].onClick());
+    });
+  }
+
+  // active-filter chip in control bar
+  const chipWrap = document.getElementById('alertChipWrap');
+  chipWrap.innerHTML = extraFilter
+    ? `<span class="active-alert-chip">${extraFilterLabel} <button id="clearAlertChip">✕</button></span>`
+    : '';
+  if(extraFilter){
+    document.getElementById('clearAlertChip').addEventListener('click', clearExtraFilter);
+  }
+}
+
+// ---------- 1a) Core Executive Summary metrics (top-of-dashboard strip) ----------
+function computeCoreExecutiveMetrics(rows){
+  const total = rows.length;
+  const isOpen = d=> d.status && (d.status.includes('جارى') || d.status.includes('التحقيق'));
+  const open = rows.filter(isOpen).length;
+  const closed = total - open;
+  const slaVals = rows.map(d=>d.sla_days).filter(v=> typeof v==='number');
+  const slaOk = slaVals.filter(v=> v<=7).length;
+  const slaCompliance = slaVals.length ? Math.round((slaOk/slaVals.length)*100) : null;
+  const avgResolution = slaVals.length ? (slaVals.reduce((a,b)=>a+b,0)/slaVals.length) : null;
+  const totalComp = rows.reduce((s,d)=> s + (typeof d.compensation_amount==='number'?d.compensation_amount:0), 0);
+  const closureRate = total ? Math.round((closed/total)*100) : null;
+  const compRows = rows.filter(d=> typeof d.compensation_amount==='number');
+  const avgComp = compRows.length ? totalComp/compRows.length : null;
+  const handlerCount = new Set(rows.filter(d=> d.owner && d.owner!=='غير محدد').map(d=>d.owner)).size;
+  const avgPerHandler = handlerCount ? total/handlerCount : null;
+  return { total, open, closed, slaCompliance, avgResolution, totalComp, closureRate, avgComp, avgPerHandler };
+}
+
+function renderCoreExecutiveMetrics(rows){
+  const grid = document.getElementById('execCoreGrid');
+  if(!grid) return;
+  if(!rows.length){
+    grid.innerHTML = `<div class="exec-reco-empty">لا توجد بيانات كافية ضمن عوامل التصفية الحالية لعرض الملخص التنفيذي.</div>`;
+    return;
+  }
+  const m = computeCoreExecutiveMetrics(rows);
+  const { prevHalf, currHalf } = splitByDateHalves(rows);
+  const mPrev = prevHalf.length ? computeCoreExecutiveMetrics(prevHalf) : null;
+  const mCurr = computeCoreExecutiveMetrics(currHalf.length ? currHalf : rows);
+  const trendFor = (key, lowerIsBetter) => mPrev ? kpiTrend(mCurr[key], mPrev[key], lowerIsBetter) : `<span class="kpi-trend-badge flat">▬ لا توجد بيانات كافية للمقارنة</span>`;
+  const cards = [
+    { tone:'', label:'إجمالي الشكاوى', value: m.total, trend: trendFor('total', true) },
+    { tone:'tone-pending', label:'الشكاوى المفتوحة', value: m.open, trend: trendFor('open', true) },
+    { tone:'tone-accept', label:'الشكاوى المغلقة', value: m.closed, trend: trendFor('closed', false) },
+    { tone: m.slaCompliance===null ? '' : (m.slaCompliance>=70?'tone-accept':'tone-reject'),
+      label:'الالتزام بـ SLA', value: m.slaCompliance===null ? '—' : `${m.slaCompliance}<sup>%</sup>`, trend: trendFor('slaCompliance', false) },
+    { tone:'tone-gold', label:'متوسط زمن الحل', value: m.avgResolution===null ? '—' : `${m.avgResolution.toFixed(1)}<sup>يوم</sup>`, trend: trendFor('avgResolution', true) },
+    { tone:'tone-gold', label:'إجمالي التعويضات', value: `${m.totalComp.toLocaleString('en-US')}<sup>ج.م</sup>`, trend: trendFor('totalComp', true) },
+    { tone: m.closureRate===null ? '' : (m.closureRate>=60?'tone-accept':'tone-reject'),
+      label:'معدل إغلاق الشكاوى', value: m.closureRate===null ? '—' : `${m.closureRate}<sup>%</sup>`, trend: trendFor('closureRate', false) },
+    { tone:'tone-gold', label:'متوسط التعويض', value: m.avgComp===null ? '—' : `${Math.round(m.avgComp).toLocaleString('en-US')}<sup>ج.م</sup>`, trend: trendFor('avgComp', true) },
+    { tone:'', label:'متوسط الشكاوى لكل معالج', value: m.avgPerHandler===null ? '—' : `${m.avgPerHandler.toFixed(1)}`, trend: trendFor('avgPerHandler', true) },
+  ];
+  grid.innerHTML = cards.map(c=>`
+    <div class="exec-core-card ${c.tone}">
+      <div class="exec-core-label">${c.label}</div>
+      <div class="exec-core-value value-pop">${c.value}</div>
+      <div class="exec-core-trend">${c.trend}</div>
+    </div>
+  `).join('');
+}
+
+// ---------- 1c) Executive Health Score (weighted, rule-based, 0-100) ----------
+function computeHealthScore(rows){
+  if(!rows.length) return null;
+  const m = computeCoreExecutiveMetrics(rows);
+
+  // Each factor is normalized to a 0-100 sub-score, then combined with fixed weights.
+  const closureScore = m.closureRate===null ? 50 : m.closureRate;
+  const slaScore = m.slaCompliance===null ? 50 : m.slaCompliance;
+  // Avg resolution time: target 7 days = 100, degrading to 0 at 21 days (3x target).
+  const resScore = m.avgResolution===null ? 100 : Math.max(0, Math.min(100, 100 - ((m.avgResolution-7)/14)*100));
+  // Pending ratio: 0% open = 100, 100% open = 0.
+  const pendingRatio = m.total ? m.open/m.total : 0;
+  const pendingScore = Math.max(0, Math.min(100, 100 - pendingRatio*100));
+  // Compensation cost: average compensation per paid complaint — 0 EGP = 100, 1000+ EGP = 0.
+  const compScore = m.avgComp===null ? 100 : Math.max(0, Math.min(100, 100 - (m.avgComp/1000)*100));
+  // Complaint growth: current-vs-previous 7-day window (reuses the same weekly comparison as Smart Insights).
+  const last7 = new Date(REF_DATE); last7.setDate(last7.getDate()-7);
+  const prev14 = new Date(REF_DATE); prev14.setDate(prev14.getDate()-14);
+  const fmt = x=> x.toISOString().slice(0,10);
+  const curWeek = rows.filter(d=> d.date_added && d.date_added > fmt(last7)).length;
+  const prevWeek = rows.filter(d=> d.date_added && d.date_added > fmt(prev14) && d.date_added <= fmt(last7)).length;
+  const growthPct = prevWeek ? ((curWeek-prevWeek)/prevWeek)*100 : (curWeek>0?0:0);
+  const growthScore = Math.max(0, Math.min(100, 100 - Math.max(0, growthPct)));
+
+  const factors = [
+    { label:'معدل إغلاق الشكاوى', weight:0.20, score:closureScore },
+    { label:'الالتزام بـ SLA', weight:0.25, score:slaScore },
+    { label:'متوسط زمن الحل', weight:0.15, score:resScore },
+    { label:'نسبة الشكاوى المعلّقة', weight:0.15, score:pendingScore },
+    { label:'تكلفة التعويضات', weight:0.15, score:compScore },
+    { label:'نمو حجم الشكاوى', weight:0.10, score:growthScore },
+  ];
+  const score = Math.round(factors.reduce((s,f)=> s + f.score*f.weight, 0));
+  const band = score>=90?'excellent': score>=75?'good': score>=60?'attention':'critical';
+  const bandLabel = { excellent:'ممتاز (Excellent)', good:'جيد (Good)', attention:'يحتاج انتباه (Needs Attention)', critical:'حرج (Critical)' }[band];
+  const bandColor = { excellent:'var(--health-green)', good:'var(--health-yellow)', attention:'var(--health-orange)', critical:'var(--health-red)' }[band];
+  return { score, band, bandLabel, bandColor, factors };
+}
+
+function renderHealthScore(rows){
+  const panel = document.getElementById('healthScorePanel');
+  if(!panel) return;
+  const h = computeHealthScore(rows);
+  if(!h){
+    panel.innerHTML = `<div class="exec-reco-empty">لا توجد بيانات كافية ضمن عوامل التصفية الحالية لحساب مؤشر الصحة التنفيذي.</div>`;
+    return;
+  }
+  const r = 54, circ = 2*Math.PI*r;
+  const offset = circ - (h.score/100)*circ;
+  panel.innerHTML = `
+    <div class="hs-gauge">
+      <svg viewBox="0 0 132 132">
+        <circle class="track" cx="66" cy="66" r="${r}"></circle>
+        <circle class="fill" cx="66" cy="66" r="${r}" stroke="${h.bandColor}" stroke-dasharray="${circ}" stroke-dashoffset="${offset}"></circle>
+      </svg>
+      <div class="hs-gauge-num">
+        <b class="value-pop">${h.score}</b>
+        <span>من 100</span>
+      </div>
+    </div>
+    <div>
+      <div class="hs-breakdown-title">مؤشر الصحة التنفيذي</div>
+      <span class="hs-band-badge" style="background:${h.bandColor}22;color:${h.bandColor}">${h.bandLabel}</span>
+    </div>
+    <div class="hs-breakdown">
+      <div class="hs-breakdown-title">تفصيل الوزن المحسوب</div>
+      ${h.factors.map(f=>`
+        <div class="hs-factor-row">
+          <span class="hs-factor-label">${f.label} <span style="color:var(--ink-faint)">(${Math.round(f.weight*100)}%)</span></span>
+          <span class="hs-factor-track"><span class="hs-factor-fill" style="width:${Math.round(f.score)}%;background:${h.bandColor}"></span></span>
+          <span class="hs-factor-val">${Math.round(f.score)}</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+// ---------- 1d) Executive Snapshot (compact at-a-glance card) ----------
+function renderExecutiveSnapshot(rows){
+  const panel = document.getElementById('execSnapshotPanel');
+  if(!panel) return;
+  if(!rows.length){
+    panel.innerHTML = `<div class="exec-reco-empty" style="color:#F3F1E9;">لا توجد بيانات كافية ضمن عوامل التصفية الحالية لعرض الملخص السريع.</div>`;
+    return;
+  }
+  const h = computeHealthScore(rows);
+  const m = computeCoreExecutiveMetrics(rows);
+  const alerts = computeAlerts(rows);
+  const criticalAlerts = alerts.filter(a=> a.priority==='crit' && a.count>0).reduce((s,a)=>s+a.count,0);
+  const handlers = computeHandlerPerformance(rows).filter(x=>x.count>0);
+  const best = handlers.length ? handlers.slice().sort((a,b)=>b.score-a.score)[0] : null;
+  const worst = handlers.length ? handlers.slice().sort((a,b)=>a.score-b.score)[0] : null;
+
+  const r = 33, circ = 2*Math.PI*r;
+  const offset = h ? circ - (h.score/100)*circ : circ;
+  const todayStatus = !h ? '—' : (h.band==='excellent'||h.band==='good') ? '🟢 الأداء ضمن الحدود المستهدفة' : (h.band==='attention' ? '🟠 يتطلب متابعة' : '🔴 يتطلب تدخلاً عاجلاً');
+
+  panel.innerHTML = `
+    <div class="snap-score-ring">
+      <svg viewBox="0 0 78 78">
+        <circle class="track" cx="39" cy="39" r="${r}"></circle>
+        <circle class="fill" cx="39" cy="39" r="${r}" stroke="${h?h.bandColor:'var(--neutral)'}" stroke-dasharray="${circ}" stroke-dashoffset="${offset}"></circle>
+      </svg>
+      <div class="snap-score-num"><b class="value-pop">${h?h.score:'—'}</b><span>الصحة العامة</span></div>
+    </div>
+    <div class="snap-status-block">
+      <div class="snap-status-label">حالة اليوم</div>
+      <div class="snap-status-value">${todayStatus}</div>
+    </div>
+    <div class="snap-divider"></div>
+    <div class="snap-stats">
+      <div class="snap-stat"><div class="sl">تنبيهات حرجة</div><div class="sv ${criticalAlerts>0?'crit':''}">${criticalAlerts}</div></div>
+      <div class="snap-stat"><div class="sl">أفضل معالج</div><div class="sv">${best ? best.owner : '—'}</div></div>
+      <div class="snap-stat"><div class="sl">أضعف معالج</div><div class="sv">${worst ? worst.owner : '—'}</div></div>
+      <div class="snap-stat"><div class="sl">الشكاوى المفتوحة</div><div class="sv">${m.open}</div></div>
+      <div class="snap-stat"><div class="sl">الالتزام بـ SLA</div><div class="sv">${m.slaCompliance===null?'—':m.slaCompliance+'%'}</div></div>
+    </div>
+  `;
+}
+
+// ---------- 1b) Executive Summary (new — reuses existing computed fields, no changes to underlying logic) ----------
+function computeExecutiveSummary(rows){
+  const result = {};
+  if(!rows.length){ result.empty = true; return result; }
+
+  // Reuses the same handler performance computation used by the Complaint Handler Performance Index below.
+  const handlers = computeHandlerPerformance(rows).filter(h=> h.count>0);
+
+  if(handlers.length){
+    result.bestHandler = handlers.slice().sort((a,b)=> b.score-a.score)[0];
+    result.lowestPerformingHandler = handlers.slice().sort((a,b)=> a.score-b.score)[0];
+    result.highestVolumeHandler = handlers.slice().sort((a,b)=> b.count-a.count)[0];
+  }
+  const withSla = handlers.filter(h=> h.slaTotal>0);
+  if(withSla.length){
+    result.lowestSlaHandler = withSla.slice().sort((a,b)=> a.slaCompliance-b.slaCompliance)[0];
+    result.highestSlaHandler = withSla.slice().sort((a,b)=> b.slaCompliance-a.slaCompliance)[0];
+  }
+
+  const compRows = rows.filter(d=> typeof d.compensation_amount === 'number');
+  if(compRows.length){
+    result.highestComp = compRows.slice().sort((a,b)=> b.compensation_amount-a.compensation_amount)[0];
+  }
+
+  // Longest pending complaint (still open/under investigation), by days since it was logged
+  const openRows = rows.filter(d=> d.status && (d.status.includes('جارى')||d.status.includes('التحقيق')) && d.date_added);
+  if(openRows.length){
+    result.longestPending = openRows.slice()
+      .map(d=> ({ row:d, days: daysBetween(REF_DATE, new Date(d.date_added)) }))
+      .sort((a,b)=> b.days-a.days)[0];
+  }
+
+  const slaVals = rows.map(d=>d.sla_days).filter(v=> typeof v==='number');
+  result.avgResolution = slaVals.length ? slaVals.reduce((a,b)=>a+b,0)/slaVals.length : null;
+
+  const avgSlaOfArr = arr=>{ const v=arr.map(d=>d.sla_days).filter(x=>typeof x==='number'); return v.length ? v.reduce((a,b)=>a+b,0)/v.length : null; };
+
+  // Monthly performance comparison
+  const monthOrder = ['يناير','فبراير','مارس','ابريل','أبريل','مايو','يونيو','يوليو','اغسطس','أغسطس','سبتمبر','اكتوبر','أكتوبر','نوفمبر','ديسمبر'];
+  const byMonth = {};
+  rows.forEach(d=>{ if(d.month){ (byMonth[d.month]=byMonth[d.month]||[]).push(d); } });
+  const monthKeys = Object.keys(byMonth).sort((a,b)=> monthOrder.indexOf(a)-monthOrder.indexOf(b));
+  if(monthKeys.length >= 2){
+    const lastM = monthKeys[monthKeys.length-1], prevM = monthKeys[monthKeys.length-2];
+    result.monthlyCompare = {
+      lastLabel:lastM, prevLabel:prevM,
+      lastCount: byMonth[lastM].length, prevCount: byMonth[prevM].length,
+      lastAvgSla: avgSlaOfArr(byMonth[lastM]), prevAvgSla: avgSlaOfArr(byMonth[prevM])
+    };
+  }
+
+  // Weekly performance comparison (last 7 days vs the 7 days before that, relative to the latest date in view)
+  const last7 = new Date(REF_DATE); last7.setDate(last7.getDate()-7);
+  const prev14 = new Date(REF_DATE); prev14.setDate(prev14.getDate()-14);
+  const fmt = x=> x.toISOString().slice(0,10);
+  const curWeek = rows.filter(d=> d.date_added && d.date_added > fmt(last7));
+  const prevWeek = rows.filter(d=> d.date_added && d.date_added > fmt(prev14) && d.date_added <= fmt(last7));
+  result.weeklyCompare = {
+    curCount: curWeek.length, prevCount: prevWeek.length,
+    curAvgSla: avgSlaOfArr(curWeek), prevAvgSla: avgSlaOfArr(prevWeek)
+  };
+
+  // Top complaint reasons (by classification)
+  const classCounts = {};
+  rows.forEach(d=>{ if(d.classification && d.classification!=='غير مصنف') classCounts[d.classification]=(classCounts[d.classification]||0)+1; });
+  result.topReasons = Object.entries(classCounts).sort((a,b)=>b[1]-a[1]).slice(0,5)
+    .map(([name,count])=>({ name, count, pct: Math.round((count/rows.length)*100) }));
+
+  // Smart, rule-based recommendations for management (no external AI — thresholds only)
+  const recos = [];
+  if(result.lowestSlaHandler && result.lowestSlaHandler.slaCompliance < 0.6){
+    recos.push({ icon:'⚠️', text:`مراجعة أداء <b>${result.lowestSlaHandler.owner}</b> — الالتزام بـ SLA حاليًا ${Math.round(result.lowestSlaHandler.slaCompliance*100)}% فقط، الأدنى بين معالجي الشكاوى.` });
+  }
+  const overOpen = handlers.filter(h=> h.open > 5);
+  if(overOpen.length){
+    recos.push({ icon:'📋', text:`إعادة توزيع الحمل على <b>${overOpen.map(h=>h.owner).join('، ')}</b> — تجاوزوا 5 شكاوى مفتوحة لكل منهم، ما قد يؤخر زمن الحل.` });
+  }
+  if(result.topReasons.length && result.topReasons[0].pct >= 25){
+    recos.push({ icon:'🔎', text:`دراسة السبب الجذري لـ <b>${result.topReasons[0].name}</b> — يمثل ${result.topReasons[0].pct}% من الشكاوى المصنّفة ضمن النتائج الحالية.` });
+  }
+  if(result.weeklyCompare.prevCount > 0){
+    const pct = Math.round(((result.weeklyCompare.curCount - result.weeklyCompare.prevCount) / result.weeklyCompare.prevCount) * 100);
+    if(pct >= 30){
+      recos.push({ icon:'📈', text:`حجم الشكاوى ارتفع بنسبة ${pct}% خلال آخر 7 أيام مقارنة بالأسبوع السابق — يُنصح بمتابعة السبب قبل تفاقمه.` });
+    }
+  }
+  if(result.avgResolution !== null && result.avgResolution > 7){
+    recos.push({ icon:'⏱', text:`متوسط زمن الحل الحالي ${result.avgResolution.toFixed(1)} يوم، أعلى من المهلة المستهدفة (7 أيام) — يُنصح بتسريع دورة المراجعة.` });
+  }
+  if(!recos.length){
+    recos.push({ icon:'✅', text:'لا توجد تنبيهات إدارية عاجلة ضمن عوامل التصفية الحالية — الأداء ضمن الحدود المستهدفة.' });
+  }
+  result.recommendations = recos.slice(0,5);
+
+  return result;
+}
+
+function deltaBadgeHtml(curr, prev, lowerIsBetter){
+  if(prev===null || prev===undefined || curr===null || curr===undefined) return `<span class="exec-compare-delta flat">—</span>`;
+  const diff = curr - prev;
+  if(Math.abs(diff) < 0.05) return `<span class="exec-compare-delta flat">= مستقر</span>`;
+  const isUp = diff > 0;
+  const good = lowerIsBetter ? !isUp : isUp;
+  const cls = isUp ? (good?'up-good':'up-bad') : (good?'down-good':'down-bad');
+  return `<span class="exec-compare-delta ${cls}">${isUp?'▲':'▼'} ${Math.abs(diff).toFixed(1)}</span>`;
+}
+
+function renderExecutiveSummary(rows){
+  const grid = document.getElementById('execSummaryGrid');
+  const compareGrid = document.getElementById('execCompareGrid');
+  const reasonsList = document.getElementById('execReasonsList');
+  const recoList = document.getElementById('execRecommendations');
+  if(!grid) return;
+
+  const s = computeExecutiveSummary(rows);
+  if(s.empty){
+    grid.innerHTML = `<div class="exec-reco-empty">لا توجد بيانات كافية ضمن عوامل التصفية الحالية لعرض الملخص التنفيذي.</div>`;
+    if(compareGrid) compareGrid.innerHTML = '';
+    if(reasonsList) reasonsList.innerHTML = '';
+    if(recoList) recoList.innerHTML = '';
+    return;
+  }
+
+  const cards = [
+    { tone:'tone-accept', icon:'🏆', label:'أفضل معالج شكاوى',
+      value: s.bestHandler ? s.bestHandler.owner : '—',
+      sub: s.bestHandler ? `درجة الأداء ${s.bestHandler.score}/100 · ${s.bestHandler.count} شكوى مسندة` : 'لا توجد بيانات كافية' },
+    { tone:'tone-reject', icon:'⚠️', label:'أضعف معالج شكاوى أداءً',
+      value: s.lowestPerformingHandler ? s.lowestPerformingHandler.owner : '—',
+      sub: s.lowestPerformingHandler ? `درجة الأداء ${s.lowestPerformingHandler.score}/100 · ${s.lowestPerformingHandler.open} شكوى مفتوحة` : 'لا توجد بيانات كافية' },
+    { tone:'', icon:'📊', label:'أعلى حجم شكاوى',
+      value: s.highestVolumeHandler ? s.highestVolumeHandler.owner : '—',
+      sub: s.highestVolumeHandler ? `${s.highestVolumeHandler.count} شكوى (${Math.round((s.highestVolumeHandler.count/rows.length)*100)}% من الإجمالي)` : 'لا توجد بيانات كافية' },
+    { tone:'tone-gold', icon:'💰', label:'أعلى قيمة تعويض',
+      value: s.highestComp ? `${s.highestComp.compensation_amount.toLocaleString('en-US')} ج.م` : '—',
+      sub: s.highestComp ? `شكوى #${s.highestComp.id} · ${s.highestComp.owner || 'غير محدد'}` : 'لا توجد حالات تعويض' },
+    { tone:'', icon:'🔎', label:'أكثر سبب شكوى تكرارًا',
+      value: s.topReasons && s.topReasons.length ? s.topReasons[0].name : '—',
+      sub: s.topReasons && s.topReasons.length ? `${s.topReasons[0].count} شكوى (${s.topReasons[0].pct}% من الإجمالي)` : 'لا توجد تصنيفات كافية' },
+    { tone:'tone-pending', icon:'⏳', label:'أطول شكوى معلّقة',
+      value: s.longestPending ? `#${s.longestPending.row.id ?? ''}` : '—',
+      sub: s.longestPending ? `معلّقة منذ ${s.longestPending.days} يوم · ${s.longestPending.row.owner || 'غير محدد'}` : 'لا توجد شكاوى مفتوحة حاليًا' },
+    { tone:'tone-accept', icon:'✅', label:'أعلى التزام بـ SLA',
+      value: s.highestSlaHandler ? s.highestSlaHandler.owner : '—',
+      sub: s.highestSlaHandler ? `التزام ${Math.round(s.highestSlaHandler.slaCompliance*100)}% بمهلة الحل المستهدفة` : 'لا توجد بيانات كافية' },
+    { tone:'tone-reject', icon:'📉', label:'أقل التزام بـ SLA',
+      value: s.lowestSlaHandler ? s.lowestSlaHandler.owner : '—',
+      sub: s.lowestSlaHandler ? `التزام ${Math.round(s.lowestSlaHandler.slaCompliance*100)}% فقط بمهلة الحل المستهدفة` : 'لا توجد بيانات كافية' },
+  ];
+  grid.innerHTML = cards.map(c=>`
+    <div class="exec-stat-card ${c.tone}">
+      <div class="exec-stat-label"><span class="exec-stat-icon">${c.icon}</span>${c.label}</div>
+      <div class="exec-stat-value">${c.value}</div>
+      <div class="exec-stat-sub">${c.sub}</div>
+    </div>
+  `).join('');
+
+  const compareCards = [];
+  if(s.monthlyCompare){
+    const m = s.monthlyCompare;
+    compareCards.push(`
+      <div class="exec-compare-card">
+        <div class="exec-compare-title">عدد الشكاوى — مقارنة شهرية</div>
+        <div class="exec-compare-row"><span class="exec-compare-num">${m.lastCount}</span>${deltaBadgeHtml(m.lastCount, m.prevCount, true)}</div>
+        <div class="exec-compare-caption">${m.lastLabel} مقابل ${m.prevCount} في ${m.prevLabel}</div>
+      </div>
+      <div class="exec-compare-card">
+        <div class="exec-compare-title">متوسط زمن الحل — مقارنة شهرية</div>
+        <div class="exec-compare-row"><span class="exec-compare-num">${m.lastAvgSla!==null?m.lastAvgSla.toFixed(1):'—'}</span>${deltaBadgeHtml(m.lastAvgSla, m.prevAvgSla, true)}</div>
+        <div class="exec-compare-caption">${m.lastLabel} مقابل ${m.prevAvgSla!==null?m.prevAvgSla.toFixed(1):'—'} يوم في ${m.prevLabel}</div>
+      </div>
+    `);
+  } else {
+    compareCards.push(`<div class="exec-reco-empty">لا تتوفر بيانات كافية لمقارنة شهرية (شهر واحد فقط ضمن النتائج الحالية).</div>`);
+  }
+  if(s.weeklyCompare && (s.weeklyCompare.curCount || s.weeklyCompare.prevCount)){
+    const w = s.weeklyCompare;
+    compareCards.push(`
+      <div class="exec-compare-card">
+        <div class="exec-compare-title">عدد الشكاوى — آخر 7 أيام</div>
+        <div class="exec-compare-row"><span class="exec-compare-num">${w.curCount}</span>${deltaBadgeHtml(w.curCount, w.prevCount, true)}</div>
+        <div class="exec-compare-caption">مقابل ${w.prevCount} في الأسبوع السابق</div>
+      </div>
+      <div class="exec-compare-card">
+        <div class="exec-compare-title">متوسط زمن الحل — آخر 7 أيام</div>
+        <div class="exec-compare-row"><span class="exec-compare-num">${w.curAvgSla!==null?w.curAvgSla.toFixed(1):'—'}</span>${deltaBadgeHtml(w.curAvgSla, w.prevAvgSla, true)}</div>
+        <div class="exec-compare-caption">مقابل ${w.prevAvgSla!==null?w.prevAvgSla.toFixed(1):'—'} يوم في الأسبوع السابق</div>
+      </div>
+    `);
+  }
+  if(compareGrid) compareGrid.innerHTML = compareCards.join('');
+
+  if(reasonsList){
+    if(s.topReasons && s.topReasons.length){
+      const maxCount = s.topReasons[0].count;
+      reasonsList.innerHTML = s.topReasons.map(r=>`
+        <div class="exec-reason-row">
+          <span class="exec-reason-name" title="${r.name}">${r.name}</span>
+          <span class="exec-reason-bar-track"><span class="exec-reason-bar-fill" style="width:${Math.round((r.count/maxCount)*100)}%"></span></span>
+          <span class="exec-reason-pct">${r.pct}%</span>
+        </div>
+      `).join('');
+    } else {
+      reasonsList.innerHTML = `<div class="exec-reco-empty">لا توجد تصنيفات كافية لعرضها ضمن النتائج الحالية.</div>`;
+    }
+  }
+
+  if(recoList){
+    recoList.innerHTML = s.recommendations.map(r=>`
+      <div class="exec-reco-item"><span class="reco-icon">${r.icon}</span><span>${r.text}</span></div>
+    `).join('');
+  }
+}
+
+// ---------- 2) Executive Insights (Problem / Business Impact / Recommended Action / Priority) ----------
+function computeInsights(rows){
+  const insights = [];
+  if(!rows.length){ return []; }
+  const rank = { critical:0, high:1, medium:2, low:3 };
+
+  // Top complaint handler by volume (handler-based, in line with the Alert Center's handler focus)
+  const ownerCounts = {};
+  rows.forEach(d=>{ if(d.owner && d.owner!=='غير محدد') ownerCounts[d.owner] = (ownerCounts[d.owner]||0)+1; });
+  const topOwner = Object.entries(ownerCounts).sort((a,b)=>b[1]-a[1])[0];
+  if(topOwner){
+    const pct = Math.round((topOwner[1]/rows.length)*100);
+    insights.push({
+      problem: `معالج الشكاوى <b>${topOwner[0]}</b> يتحمّل <b>${pct}%</b> من إجمالي الشكاوى ضمن النتائج الحالية (${topOwner[1]} من ${rows.length}).`,
+      impact: 'تركّز الحمل على معالج واحد يزيد من خطر التأخير وتراجع جودة المراجعة عند الغياب أو الضغط.',
+      action: 'إعادة توزيع جزء من الشكاوى الجديدة على معالجين آخرين لتقليل التركّز.',
+      priority: pct>=50?'critical':pct>=30?'high':'medium'
+    });
+  }
+
+  // Most common classification
+  const classCounts = {};
+  rows.forEach(d=>{ if(d.classification && d.classification!=='غير مصنف') classCounts[d.classification]=(classCounts[d.classification]||0)+1; });
+  const topClass = Object.entries(classCounts).sort((a,b)=>b[1]-a[1])[0];
+  if(topClass){
+    const pct = Math.round((topClass[1]/rows.length)*100);
+    insights.push({
+      problem: `السبب الأكثر تكرارًا هو <b>${topClass[0]}</b> بنسبة <b>${pct}%</b> من الشكاوى المصنّفة.`,
+      impact: 'نمط متكرر بهذا الحجم يشير غالبًا إلى مشكلة تشغيلية جذرية تغذّي حجم الشكاوى.',
+      action: `فتح تحقيق جذري (root-cause) في سبب "${topClass[0]}" مع الفريق التشغيلي المعني.`,
+      priority: pct>=40?'critical':pct>=25?'high':'medium'
+    });
+  }
+
+  // Month-over-month resolution time comparison
+  const byMonth = {};
+  rows.forEach(d=>{ if(d.month && typeof d.sla_days==='number'){ (byMonth[d.month]=byMonth[d.month]||[]).push(d.sla_days); } });
+  const monthKeys = Object.keys(byMonth);
+  if(monthKeys.length >= 2){
+    const order = ['يناير','فبراير','مارس','ابريل','أبريل','مايو','يونيو','يوليو','اغسطس','أغسطس','سبتمبر','اكتوبر','أكتوبر','نوفمبر','ديسمبر'];
+    monthKeys.sort((a,b)=> order.indexOf(a)-order.indexOf(b));
+    const lastM = monthKeys[monthKeys.length-1], prevM = monthKeys[monthKeys.length-2];
+    const avg = arr => arr.reduce((a,b)=>a+b,0)/arr.length;
+    const lastAvg = avg(byMonth[lastM]), prevAvg = avg(byMonth[prevM]);
+    const diff = prevAvg - lastAvg;
+    if(Math.abs(diff) >= 0.1){
+      insights.push(diff>0
+        ? { problem:`متوسط زمن حل الشكاوى تحسّن بمقدار <b>${diff.toFixed(1)}</b> يوم في ${lastM} مقارنة بـ ${prevM}.`,
+            impact:'تحسّن زمن الحل ينعكس إيجابًا على رضا العملاء ويقلل من تصعيد الشكاوى.',
+            action:'توثيق ما تغيّر في سير العمل هذا الشهر للحفاظ على التحسّن.', priority:'low' }
+        : { problem:`متوسط زمن حل الشكاوى ازداد بمقدار <b>${Math.abs(diff).toFixed(1)}</b> يوم في ${lastM} مقارنة بـ ${prevM}.`,
+            impact:'زمن حل أبطأ يرفع خطر تجاوز مهلة SLA المستهدفة (7 أيام) ويؤثر على رضا العملاء.',
+            action:'مراجعة مراحل سير العمل الحالية لتحديد أسباب التأخير في هذا الشهر.',
+            priority: Math.abs(diff)>=3?'critical':Math.abs(diff)>=1.5?'high':'medium' });
+    }
+  }
+
+  // Compensation outcome / "savings" from rejected claims
+  const accepted = rows.filter(d=> d.status && (d.status.includes('قبول')||d.status.includes('مسبقا'))).length;
+  const rejected = rows.filter(d=> d.status && d.status.includes('رفض')).length;
+  const decided = accepted + rejected;
+  if(decided){
+    const rejPct = Math.round((rejected/decided)*100);
+    insights.push({
+      problem: `تم رفض <b>${rejPct}%</b> من طلبات التعويض المقررة (${rejected} من ${decided} حالة).`,
+      impact: 'نسبة رفض مرتفعة قد تعكس ضبطًا جيدًا للتكلفة، أو قد تشير لتفاوت في معايير المراجعة إذا كانت غير متسقة عبر الفروع.',
+      action: 'مراجعة عينة من أسباب الرفض للتأكد من اتساق معايير القرار.',
+      priority: rejPct>=60?'high':'medium'
+    });
+  }
+
+  // Compensation bearer with highest liability
+  const bearerAgg = {};
+  rows.forEach(d=>{ if(d.compensation_bearer && typeof d.compensation_amount==='number'){ bearerAgg[d.compensation_bearer]=(bearerAgg[d.compensation_bearer]||0)+d.compensation_amount; } });
+  const topBearer = Object.entries(bearerAgg).sort((a,b)=>b[1]-a[1])[0];
+  const totalCompAgg = Object.values(bearerAgg).reduce((a,b)=>a+b,0);
+  if(topBearer){
+    const bearerPct = totalCompAgg ? Math.round((topBearer[1]/totalCompAgg)*100) : 0;
+    insights.push({
+      problem: `الجهة الأعلى تحمّلًا لقيمة التعويضات هي <b>${topBearer[0]}</b> بإجمالي <b>${Math.round(topBearer[1]).toLocaleString('en-US')}</b> ج.م (${bearerPct}% من إجمالي التعويضات).`,
+      impact: 'تركّز التكلفة المالية على جهة واحدة يزيد من التعرّض المالي المرتبط بأدائها.',
+      action: `مراجعة الاتفاقيات أو إجراءات العمل مع "${topBearer[0]}" لتقليل تركّز المسؤولية المالية.`,
+      priority: bearerPct>=50?'high':'medium'
+    });
+  }
+
+  return insights.sort((a,b)=> rank[a.priority]-rank[b.priority]).slice(0,6);
+}
+
+function renderInsights(rows){
+  const list = computeInsights(rows);
+  const panel = document.getElementById('insightsPanel');
+  if(!list.length){
+    panel.innerHTML = `<div class="exec-reco-empty">لا توجد بيانات كافية ضمن عوامل التصفية الحالية لعرض رؤى تنفيذية.</div>`;
+    return;
+  }
+  const priorityLabel = { critical:'حرج', high:'مرتفع', medium:'متوسط', low:'منخفض' };
+  panel.innerHTML = `<div class="insight-cards-v2">${list.map(ins=>`
+    <div class="insight-card-v2">
+      <div class="insight-card-v2-head">
+        <span class="insight-priority ${ins.priority}">${priorityLabel[ins.priority]}</span>
+      </div>
+      <div class="insight-card-v2-row"><span class="k">المشكلة (Problem)</span><span class="v">${ins.problem}</span></div>
+      <div class="insight-card-v2-row"><span class="k">الأثر على الأعمال (Business Impact)</span><span class="v">${ins.impact}</span></div>
+      <div class="insight-card-v2-row"><span class="k">الإجراء الموصى به (Recommended Action)</span><span class="v">${ins.action}</span></div>
+    </div>
+  `).join('')}</div>`;
+}
+
+// ---------- 2b) Executive Action Center ----------
+function computeActionCenter(rows){
+  const actions = [];
+  if(!rows.length) return actions;
+  const rank = { critical:0, high:1, medium:2, low:3 };
+  const isOpen = d=> d.status && (d.status.includes('جارى') || d.status.includes('التحقيق'));
+
+  // Overdue complaints (open more than 5 days)
+  const overdue = rows.filter(d=> isOpen(d) && d.date_added && daysBetween(REF_DATE, new Date(d.date_added)) > 5);
+  if(overdue.length){
+    actions.push({
+      icon:'⏰', title:'مراجعة الشكاوى المتأخرة',
+      desc:`${overdue.length} شكوى قيد التحقيق منذ أكثر من 5 أيام دون حل.`,
+      owner:'مدير العمليات', impact:'تقليل خطر تصعيد العملاء وتراكم الشكاوى المفتوحة',
+      priority: overdue.length>10?'critical':overdue.length>5?'high':'medium'
+    });
+  }
+
+  // Low-performing handlers
+  const handlers = computeHandlerPerformance(rows).filter(h=> h.count>0);
+  const lowPerf = handlers.filter(h=> h.score<60);
+  if(lowPerf.length){
+    actions.push({
+      icon:'📉', title:'متابعة معالجي الشكاوى ضعيفي الأداء',
+      desc:`${lowPerf.map(h=>h.owner).join('، ')} — درجة أداء أقل من 60/100.`,
+      owner:'مدير جودة خدمة العملاء', impact:'رفع مستوى الالتزام بـ SLA وتقليل الشكاوى المفتوحة لكل معالج',
+      priority: lowPerf.some(h=>h.score<40) ? 'critical' : 'high'
+    });
+  }
+
+  // Compensation increase (month-over-month)
+  const byMonth = {};
+  rows.forEach(d=>{ if(d.month) (byMonth[d.month]=byMonth[d.month]||[]).push(d); });
+  const order = ['يناير','فبراير','مارس','ابريل','أبريل','مايو','يونيو','يوليو','اغسطس','أغسطس','سبتمبر','اكتوبر','أكتوبر','نوفمبر','ديسمبر'];
+  const monthKeys = Object.keys(byMonth).sort((a,b)=> order.indexOf(a)-order.indexOf(b));
+  if(monthKeys.length>=2){
+    const compOf = arr=> arr.reduce((s,d)=> s+(typeof d.compensation_amount==='number'?d.compensation_amount:0),0);
+    const lastM = monthKeys[monthKeys.length-1], prevM = monthKeys[monthKeys.length-2];
+    const lastComp = compOf(byMonth[lastM]), prevComp = compOf(byMonth[prevM]);
+    if(prevComp>0 && lastComp > prevComp*1.2){
+      const growthPct = Math.round(((lastComp-prevComp)/prevComp)*100);
+      actions.push({
+        icon:'💰', title:'مراجعة ارتفاع تكلفة التعويضات',
+        desc:`إجمالي التعويضات ارتفع بنسبة ${growthPct}% في ${lastM} مقارنة بـ ${prevM}.`,
+        owner:'الإدارة المالية', impact:'ضبط التكلفة التشغيلية المرتبطة بالتعويضات قبل تفاقمها',
+        priority: growthPct>=50?'critical':'high'
+      });
+    }
+  }
+
+  // Complaint spikes (last 7 days vs previous 7 days)
+  const last7 = new Date(REF_DATE); last7.setDate(last7.getDate()-7);
+  const prev14 = new Date(REF_DATE); prev14.setDate(prev14.getDate()-14);
+  const fmt = x=> x.toISOString().slice(0,10);
+  const curWeek = rows.filter(d=> d.date_added && d.date_added > fmt(last7)).length;
+  const prevWeek = rows.filter(d=> d.date_added && d.date_added > fmt(prev14) && d.date_added <= fmt(last7)).length;
+  if(prevWeek>0 && curWeek > prevWeek*1.3){
+    const growthPct = Math.round(((curWeek-prevWeek)/prevWeek)*100);
+    actions.push({
+      icon:'📈', title:'التحقيق في ارتفاع حجم الشكاوى',
+      desc:`حجم الشكاوى ارتفع بنسبة ${growthPct}% خلال آخر 7 أيام مقابل الأسبوع السابق.`,
+      owner:'مدير العمليات', impact:'تحديد السبب الجذري قبل أن يتحول الارتفاع إلى نمط دائم',
+      priority: growthPct>=60?'critical':'high'
+    });
+  }
+
+  // SLA compliance
+  const slaVals = rows.map(d=>d.sla_days).filter(v=> typeof v==='number');
+  const slaCompliance = slaVals.length ? (slaVals.filter(v=>v<=7).length/slaVals.length)*100 : null;
+  if(slaCompliance!==null && slaCompliance<70){
+    actions.push({
+      icon:'🎯', title:'تحسين الالتزام بمهلة SLA',
+      desc:`الالتزام الحالي بمهلة الحل (7 أيام) هو ${Math.round(slaCompliance)}% فقط.`,
+      owner:'مدير جودة خدمة العملاء', impact:'رفع رضا العملاء وتقليل خطر التصعيد المرتبط بتأخر الحل',
+      priority: slaCompliance<50?'critical':'high'
+    });
+  }
+
+  return actions.sort((a,b)=> rank[a.priority]-rank[b.priority]);
+}
+
+function renderActionCenter(rows){
+  const grid = document.getElementById('actionCenterGrid');
+  if(!grid) return;
+  const actions = computeActionCenter(rows);
+  if(!actions.length){
+    grid.innerHTML = `<div class="action-empty">لا توجد إجراءات عاجلة مطلوبة ضمن عوامل التصفية الحالية 👍</div>`;
+    return;
+  }
+  const priorityLabel = { critical:'حرج', high:'مرتفع', medium:'متوسط', low:'منخفض' };
+  grid.innerHTML = actions.map(a=>`
+    <div class="action-card ${a.priority}">
+      <div class="action-title"><span>${a.icon}</span>${a.title}</div>
+      <div class="action-desc">${a.desc}</div>
+      <div class="action-meta">
+        <div class="action-meta-item"><span class="k">الأولوية</span><span class="v">${priorityLabel[a.priority]}</span></div>
+        <div class="action-meta-item"><span class="k">الجهة المسؤولة</span><span class="v">${a.owner}</span></div>
+        <div class="action-meta-item"><span class="k">الأثر المتوقع</span><span class="v">${a.impact}</span></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+
+// ---------- 3) Complaint Handler Performance Index ----------
+let healthSortKey = 'score', healthSortDir = -1;
+function computeHandlerScore(h){
+  const closedRate = h.count ? h.closed / h.count : 0;
+  const openRate = h.count ? h.open / h.count : 0;
+  const normSla = h.avgSlaMax ? h.avgSla / h.avgSlaMax : 0;
+  const score = (h.slaCompliance*35) + (closedRate*30) + ((1-normSla)*20) + ((1-openRate)*15);
+  return Math.max(0, Math.min(100, Math.round(score)));
+}
+function computeHandlerPerformance(rows){
+  const handlers = {};
+  rows.forEach(d=>{
+    if(!d.owner || d.owner==='غير محدد') return;
+    const h = handlers[d.owner] = handlers[d.owner] || { owner:d.owner, count:0, closed:0, open:0, slaVals:[], slaOk:0, slaTotal:0 };
+    h.count++;
+    const isOpen = d.status && (d.status.includes('جارى')||d.status.includes('التحقيق'));
+    if(isOpen){ h.open++; } else { h.closed++; }
+    if(typeof d.sla_days==='number'){ h.slaVals.push(d.sla_days); h.slaTotal++; if(d.sla_days<=7) h.slaOk++; }
+  });
+  const list = Object.values(handlers).map(h=>{
+    h.avgSla = h.slaVals.length ? h.slaVals.reduce((a,c)=>a+c,0)/h.slaVals.length : 0;
+    h.slaCompliance = h.slaTotal ? h.slaOk/h.slaTotal : 1;
+    return h;
+  });
+  const maxAvgSla = Math.max(1, ...list.map(h=>h.avgSla));
+  list.forEach(h=>{
+    h.avgSlaMax = maxAvgSla;
+    h.score = computeHandlerScore(h);
+    h.colorKey = h.score>=85?'green':h.score>=70?'yellow':h.score>=50?'orange':'red';
+    h.statusLabel = h.score>=85?'ممتاز':h.score>=70?'جيد':h.score>=50?'يحتاج متابعة':'حرج';
+  });
+  return list;
+}
+function computeHandlerTrends(rows){
+  const dated = rows.filter(d=>d.date_added).slice().sort((a,b)=> a.date_added < b.date_added ? -1 : a.date_added > b.date_added ? 1 : 0);
+  if(dated.length < 4) return {};
+  const mid = Math.floor(dated.length/2);
+  const prevHalf = computeHandlerPerformance(dated.slice(0, mid));
+  const currHalf = computeHandlerPerformance(dated.slice(mid));
+  const prevMap = {}; prevHalf.forEach(h=> prevMap[h.owner] = h.score);
+  const trends = {};
+  currHalf.forEach(h=>{
+    if(prevMap[h.owner] === undefined){ trends[h.owner] = 'flat'; return; }
+    if(h.score > prevMap[h.owner]) trends[h.owner] = 'up';
+    else if(h.score < prevMap[h.owner]) trends[h.owner] = 'down';
+    else trends[h.owner] = 'flat';
+  });
+  return trends;
+}
+
+function renderHandlerPerformance(rows){
+  let list = computeHandlerPerformance(rows);
+  const trends = computeHandlerTrends(rows);
+  list.forEach(h=> h.trend = trends[h.owner] || 'flat');
+  list.sort((a,b)=>{
+    let va = a[healthSortKey], vb = b[healthSortKey];
+    if(healthSortKey==='owner'){ va=va||''; vb=vb||''; return va.localeCompare(vb,'ar')*healthSortDir; }
+    if(healthSortKey==='trend'){
+      const order = {up:2, flat:1, down:0};
+      return (order[va]-order[vb])*healthSortDir;
+    }
+    return (va-vb)*healthSortDir;
+  });
+  const colorVar = { green:'var(--health-green)', yellow:'var(--health-yellow)', orange:'var(--health-orange)', red:'var(--health-red)' };
+  const colorLabel = { green:'ممتاز', yellow:'جيد', orange:'يحتاج متابعة', red:'حرج' };
+  const trendArrow = { up:'▲', down:'▼', flat:'—' };
+  const trendCls = { up:'up', down:'down', flat:'flat' };
+  const tbody = document.getElementById('healthTableBody');
+  if(!list.length){
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--ink-faint);">لا توجد بيانات مسؤولي شكاوى ضمن عوامل التصفية الحالية</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = list.map(h=>`
+    <tr data-owner="${h.owner}">
+      <td>${h.owner}</td>
+      <td class="num">${h.count}</td>
+      <td class="num">${h.closed}</td>
+      <td class="num">${h.open}</td>
+      <td class="num">${Math.round(h.slaCompliance*100)}%</td>
+      <td class="num">${h.avgSla.toFixed(1)}</td>
+      <td class="num">—</td>
+      <td>
+        <div class="health-score-cell">
+          <span class="health-dot" style="background:${colorVar[h.colorKey]}"></span>
+          <span class="health-score-num">${h.score}</span>
+          <span class="health-bar-track"><span class="health-bar-fill" style="width:${h.score}%;background:${colorVar[h.colorKey]}"></span></span>
+          <span class="health-badge" style="background:${colorVar[h.colorKey]}22;color:${colorVar[h.colorKey]}">${colorLabel[h.colorKey]}</span>
+        </div>
+      </td>
+      <td class="num"><span class="health-trend ${trendCls[h.trend]}">${trendArrow[h.trend]}</span></td>
+    </tr>
+  `).join('');
+  tbody.querySelectorAll('tr[data-owner]').forEach(tr=>{
+    tr.addEventListener('click', ()=>{
+      document.getElementById('fOwner').value = tr.dataset.owner;
+      render();
+    });
+  });
+}
+document.querySelectorAll('#healthTable thead th[data-hkey]').forEach(th=>{
+  th.addEventListener('click', ()=>{
+    const key = th.dataset.hkey;
+    if(healthSortKey===key){ healthSortDir *= -1; } else { healthSortKey = key; healthSortDir = key==='owner' ? 1 : -1; }
+    document.querySelectorAll('#healthTable thead th .arrow').forEach(a=>a.textContent='');
+    th.querySelector('.arrow').textContent = healthSortDir===1 ? '▲' : '▼';
+    render();
+  });
+});
+
+
+// ---------- 3b) Top Performers ----------
+function computeTopPerformers(rows){
+  const handlers = computeHandlerPerformance(rows).filter(h=> h.count>0);
+  const top5Handlers = handlers.slice().sort((a,b)=> b.score-a.score).slice(0,5);
+  const bottom5Handlers = handlers.slice().sort((a,b)=> a.score-b.score).slice(0,5);
+
+  const classCounts = {};
+  rows.forEach(d=>{ if(d.classification && d.classification!=='غير مصنف') classCounts[d.classification]=(classCounts[d.classification]||0)+1; });
+  const topReasons = Object.entries(classCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
+
+  // Top compensation cost grouped by complaint classification/reason
+  const compByReason = {};
+  rows.forEach(d=>{
+    if(typeof d.compensation_amount === 'number' && d.classification && d.classification!=='غير مصنف'){
+      compByReason[d.classification] = (compByReason[d.classification]||0) + d.compensation_amount;
+    }
+  });
+  const topCompReasons = Object.entries(compByReason).sort((a,b)=>b[1]-a[1]).slice(0,5);
+
+  return { top5Handlers, bottom5Handlers, topReasons, topCompReasons };
+}
+
+function renderTopPerformers(rows){
+  const wrap = document.getElementById('topPerformersGrid');
+  if(!wrap) return;
+  if(!rows.length){
+    wrap.innerHTML = `<div class="tp-card"><div class="tp-empty">لا توجد بيانات كافية ضمن عوامل التصفية الحالية.</div></div>`;
+    return;
+  }
+  const t = computeTopPerformers(rows);
+
+  const handlerRows = (list, valueFn) => list.length
+    ? list.map((h,i)=>`<div class="tp-row"><span class="tp-rank">${i+1}</span><span class="tp-name" title="${h.owner}">${h.owner}</span><span class="tp-val">${valueFn(h)}</span></div>`).join('')
+    : `<div class="tp-empty">لا توجد بيانات كافية</div>`;
+
+  const entryRows = (list, unit) => list.length
+    ? list.map(([name,val],i)=>`<div class="tp-row"><span class="tp-rank">${i+1}</span><span class="tp-name" title="${name}">${name}</span><span class="tp-val">${typeof val==='number' && unit==='amount' ? Math.round(val).toLocaleString('en-US')+' ج.م' : val}</span></div>`).join('')
+    : `<div class="tp-empty">لا توجد بيانات كافية</div>`;
+
+  wrap.innerHTML = `
+    <div class="tp-card">
+      <h5>🏆 أفضل 5 معالجي شكاوى</h5>
+      ${handlerRows(t.top5Handlers, h=>`${h.score}/100`)}
+    </div>
+    <div class="tp-card">
+      <h5>📉 أضعف 5 معالجي شكاوى</h5>
+      ${handlerRows(t.bottom5Handlers, h=>`${h.score}/100`)}
+    </div>
+    <div class="tp-card">
+      <h5>🔎 أبرز أسباب الشكاوى</h5>
+      ${entryRows(t.topReasons, 'count')}
+    </div>
+    <div class="tp-card">
+      <h5>💰 أعلى أسباب تكلفة التعويض</h5>
+      ${entryRows(t.topCompReasons, 'amount')}
+    </div>
+  `;
+}
+
+// ---------- 3c) KPI enhancement: target / achievement / trend / sparkline ----------
+function buildSparklinePath(values){
+  if(!values.length) return '';
+  const w = 100, h = 24, pad = 2;
+  const max = Math.max(...values, 0.0001);
+  const min = Math.min(...values, 0);
+  const range = (max-min) || 1;
+  const stepX = values.length>1 ? (w-2*pad)/(values.length-1) : 0;
+  return values.map((v,i)=>{
+    const x = pad + i*stepX;
+    const y = h - pad - ((v-min)/range) * (h-2*pad);
+    return `${i===0?'M':'L'}${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(' ');
+}
+function sparklineSvg(values, colorVar){
+  if(!values || values.length < 2) return `<svg class="stub-spark" viewBox="0 0 100 24"></svg>`;
+  const path = buildSparklinePath(values);
+  return `<svg class="stub-spark" viewBox="0 0 100 24" preserveAspectRatio="none"><path d="${path}" fill="none" stroke="${colorVar}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+}
+function lastNDatesSeries(rows, n, aggFn){
+  const byDate = {};
+  rows.forEach(d=>{ if(d.date_added){ (byDate[d.date_added] = byDate[d.date_added]||[]).push(d); } });
+  const keys = Object.keys(byDate).sort().slice(-n);
+  return keys.map(k=> aggFn(byDate[k]));
+}
+function trendBadge(curr, prev, lowerIsBetter){
+  if(prev===null || prev===undefined || curr===null || curr===undefined || prev===0 && curr===0){
+    return `<span class="stub-trend flat">— مستقر</span>`;
+  }
+  const diffPct = prev!==0 ? ((curr-prev)/Math.abs(prev))*100 : (curr>0?100:0);
+  if(Math.abs(diffPct) < 1) return `<span class="stub-trend flat">= مستقر</span>`;
+  const isUp = diffPct > 0;
+  const good = lowerIsBetter ? !isUp : isUp;
+  return `<span class="stub-trend ${good?'up':'down'}">${isUp?'▲':'▼'} ${Math.abs(diffPct).toFixed(0)}%</span>`;
+}
+function achieveBar(pct, good){
+  const clamped = Math.max(0, Math.min(100, pct));
+  return `<div class="stub-achieve-track"><div class="stub-achieve-fill ${good?'good':'bad'}" style="width:${clamped}%"></div></div>`;
+}
+
+function renderKpiEnhancements(rows){
+  const containers = ['kpiTotalEnh','kpiAcceptRateEnh','kpiRejectedEnh','kpiPendingEnh','kpiSlaEnh'];
+  if(!rows.length){
+    containers.forEach(id=>{ const el = document.getElementById(id); if(el) el.innerHTML=''; });
+    return;
+  }
+  const isOpen = d=> d.status && (d.status.includes('جارى')||d.status.includes('التحقيق'));
+  const dated = rows.filter(d=>d.date_added).slice().sort((a,b)=> a.date_added<b.date_added?-1:a.date_added>b.date_added?1:0);
+  let prevHalf = [], currHalf = rows;
+  if(dated.length >= 4){
+    const mid = Math.floor(dated.length/2);
+    prevHalf = dated.slice(0, mid); currHalf = dated.slice(mid);
+  }
+  const decidedOf = arr => arr.filter(d=> d.status && (d.status.includes('قبول')||d.status.includes('مسبقا')||d.status.includes('رفض')));
+  const acceptRateOf = arr => { const dec = decidedOf(arr); const acc = arr.filter(d=>d.status && (d.status.includes('قبول')||d.status.includes('مسبقا'))).length; return dec.length ? (acc/dec.length)*100 : null; };
+  const rejectedPctOf = arr => { const dec = decidedOf(arr); const rej = arr.filter(d=>d.status && d.status.includes('رفض')).length; return dec.length ? (rej/dec.length)*100 : null; };
+  const pendingPctOf = arr => arr.length ? (arr.filter(isOpen).length/arr.length)*100 : null;
+  const avgSlaOf = arr => { const v = arr.map(d=>d.sla_days).filter(x=>typeof x==='number'); return v.length ? v.reduce((a,b)=>a+b,0)/v.length : null; };
+
+  // Total complaints
+  const totalSeries = lastNDatesSeries(rows, 14, arr=>arr.length);
+  const totalEl = document.getElementById('kpiTotalEnh');
+  if(totalEl) totalEl.innerHTML = `
+    <div class="stub-enh-row"><span class="stub-target">حجم يومي متتبع (14 يوم أخير)</span>${trendBadge(currHalf.length, prevHalf.length, false)}</div>
+    ${sparklineSvg(totalSeries, 'var(--navy)')}
+  `;
+
+  // Accept rate
+  const acceptTarget = 75;
+  const acceptCurr = acceptRateOf(rows);
+  const acceptSeries = lastNDatesSeries(rows, 14, arr=>{ const v=acceptRateOf(arr); return v===null?0:v; });
+  const acceptAch = acceptCurr===null ? 0 : Math.round((acceptCurr/acceptTarget)*100);
+  const acceptEl = document.getElementById('kpiAcceptRateEnh');
+  if(acceptEl) acceptEl.innerHTML = `
+    <div class="stub-enh-row"><span class="stub-target">الهدف: <b>${acceptTarget}%</b> · الإنجاز ${acceptCurr===null?'—':acceptAch+'%'}</span>${trendBadge(acceptRateOf(currHalf), acceptRateOf(prevHalf), false)}</div>
+    ${achieveBar(acceptAch, acceptCurr!==null && acceptCurr>=acceptTarget)}
+    ${sparklineSvg(acceptSeries, 'var(--accepted)')}
+  `;
+
+  // Rejected rate (lower is better)
+  const rejTarget = 15;
+  const rejCurr = rejectedPctOf(rows);
+  const rejSeries = lastNDatesSeries(rows, 14, arr=> arr.filter(d=>d.status && d.status.includes('رفض')).length);
+  const rejAch = rejCurr===null ? 100 : Math.round(Math.min(100, (rejTarget/Math.max(rejCurr,0.001))*100));
+  const rejEl = document.getElementById('kpiRejectedEnh');
+  if(rejEl) rejEl.innerHTML = `
+    <div class="stub-enh-row"><span class="stub-target">الهدف: أقل من <b>${rejTarget}%</b></span>${trendBadge(rejectedPctOf(currHalf), rejectedPctOf(prevHalf), true)}</div>
+    ${achieveBar(rejAch, rejCurr!==null && rejCurr<=rejTarget)}
+    ${sparklineSvg(rejSeries, 'var(--rejected)')}
+  `;
+
+  // Pending / open share (lower is better)
+  const pendTarget = 20;
+  const pendCurr = pendingPctOf(rows);
+  const pendSeries = lastNDatesSeries(rows, 14, arr=> arr.filter(isOpen).length);
+  const pendAch = pendCurr===null ? 100 : Math.round(Math.min(100, (pendTarget/Math.max(pendCurr,0.001))*100));
+  const pendEl = document.getElementById('kpiPendingEnh');
+  if(pendEl) pendEl.innerHTML = `
+    <div class="stub-enh-row"><span class="stub-target">الهدف: أقل من <b>${pendTarget}%</b> من الإجمالي</span>${trendBadge(pendingPctOf(currHalf), pendingPctOf(prevHalf), true)}</div>
+    ${achieveBar(pendAch, pendCurr!==null && pendCurr<=pendTarget)}
+    ${sparklineSvg(pendSeries, 'var(--pending)')}
+  `;
+
+  // Avg resolution time (lower is better)
+  const slaTarget = 7;
+  const slaCurr = avgSlaOf(rows);
+  const slaSeries = lastNDatesSeries(rows, 14, arr=>{ const v=avgSlaOf(arr); return v===null?0:v; });
+  const slaAch = slaCurr===null ? 100 : Math.round(Math.min(100, (slaTarget/Math.max(slaCurr,0.001))*100));
+  const slaEl = document.getElementById('kpiSlaEnh');
+  if(slaEl) slaEl.innerHTML = `
+    <div class="stub-enh-row"><span class="stub-target">الهدف: أقل من <b>${slaTarget}</b> يوم</span>${trendBadge(avgSlaOf(currHalf), avgSlaOf(prevHalf), true)}</div>
+    ${achieveBar(slaAch, slaCurr!==null && slaCurr<=slaTarget)}
+    ${sparklineSvg(slaSeries, 'var(--gold)')}
+  `;
+}
+
+// ---------- 4) Live statistics bar ----------
+function countActiveFilters(){
+  const ids = ['fOwner','fBranch','fType','fStatus','fMonth','fSender','fDateFrom','fDateTo','fSearch','fBearer','fReviewResult','fConfirm','fReviewFrom','fReviewTo'];
+  let n = ids.filter(id=> document.getElementById(id).value).length;
+  if(extraFilter) n += 1;
+  return n;
+}
+function updateLiveStats(rows){
+  document.getElementById('lsRefresh').textContent = new Date().toLocaleTimeString('ar-EG', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  document.getElementById('lsTotal').textContent = DATA.length.toLocaleString('en-US');
+  document.getElementById('lsFilters').textContent = countActiveFilters();
+  document.getElementById('lsVisible').textContent = rows.length.toLocaleString('en-US');
+}
+function tickClock(){
+  const el = document.getElementById('lsClock');
+  if(el) el.textContent = new Date().toLocaleTimeString('ar-EG', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+}
+setInterval(tickClock, 1000);
+tickClock();
+
+// ---------- 5) Quick action buttons ----------
+document.getElementById('qaRefresh').addEventListener('click', ()=>{
+  const btn = document.getElementById('qaRefresh');
+  btn.style.opacity = '.5';
+  loadDashboardData({ isRefresh: true, manual: true }).finally(()=>{ btn.style.opacity='1'; });
+});
+document.getElementById('qaPrint').addEventListener('click', ()=> window.print());
+document.getElementById('qaFullscreen').addEventListener('click', ()=>{
+  if(!document.fullscreenElement){ document.documentElement.requestFullscreen?.(); }
+  else{ document.exitFullscreen?.(); }
+});
+document.getElementById('qaExport').addEventListener('click', ()=>{
+  const rows = getFiltered();
+  const cols = ['id','date_added','owner','complainant','type','branch','classification','status','compensation_amount','compensation_bearer','sla_days'];
+  const headerLabels = ['رقم الشكوى','التاريخ','المسؤول','الشاكي','النوع','الفرع','التصنيف','الحالة','التعويض','الجهة المتحملة','زمن الحل (يوم)'];
+  const escCsv = v => `"${String(v??'').replace(/"/g,'""')}"`;
+  const lines = [headerLabels.map(escCsv).join(',')];
+  rows.forEach(d=> lines.push(cols.map(c=>escCsv(d[c])).join(',')));
+  const csv = '\uFEFF' + lines.join('\r\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `complaints_export_${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+// ---------- 6) Dark mode ----------
+function applyTheme(theme){
+  document.documentElement.setAttribute('data-theme', theme);
+  document.getElementById('themeToggleIcon').textContent = theme==='dark' ? '☀️' : '🌙';
+  document.getElementById('themeToggleLabel').textContent = theme==='dark' ? 'الوضع الفاتح' : 'الوضع الداكن';
+  try{ localStorage.setItem('arrive_dashboard_theme', theme); }catch(e){}
+}
+document.getElementById('themeToggle').addEventListener('click', ()=>{
+  const cur = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+  applyTheme(cur === 'dark' ? 'light' : 'dark');
+});
+(function initTheme(){
+  let saved = 'light';
+  try{ saved = localStorage.getItem('arrive_dashboard_theme') || 'light'; }catch(e){}
+  applyTheme(saved);
+})();
+
+// ---------- 7) Smart tooltips on KPI cards ----------
+const tooltipContent = {
+  kpiTotal: ()=>{
+    const rows = getFiltered();
+    return { title:'إجمالي الشكاوى', note:'العدد الكلي للشكاوى ضمن عوامل التصفية الحالية. إجراء مقترح: راجع مسؤولي الشكاوى الأعلى مساهمة في مؤشر أداء مسؤولي الشكاوى.' };
+  },
+  kpiAcceptRate: ()=> ({ title:'نسبة قبول التعويض', note:'نسبة الحالات المقبولة من إجمالي الحالات المقررة (مقبول أو مرفوض). إجراء مقترح: قارن النسبة عبر الفروع لتحديد التفاوت في معايير القبول.' }),
+  kpiRejected: ()=> ({ title:'تعويضات مرفوضة', note:'عدد الشكاوى التي تم رفض التعويض عنها. إجراء مقترح: راجع أسباب الرفض المتكررة ضمن قسم التصنيف.' }),
+  kpiPending: ()=> ({ title:'قيد التحقيق', note:'شكاوى لم يُبتّ فيها بعد. إجراء مقترح: تابع الحالات المفتوحة منذ أكثر من 5 أيام عبر مركز التنبيهات.' }),
+  kpiSla: ()=> ({ title:'متوسط زمن الحل', note:'متوسط عدد الأيام من تاريخ الشكوى حتى الحل. إجراء مقترح: استهدف خفض هذا الرقم إلى أقل من 7 أيام.' })
+};
+const smartTip = document.getElementById('smartTooltip');
+function showTip(el, html){
+  smartTip.innerHTML = html;
+  const r = el.getBoundingClientRect();
+  smartTip.style.left = Math.min(r.left, window.innerWidth - 290) + 'px';
+  smartTip.style.top = (r.bottom + 10) + 'px';
+  smartTip.classList.add('show');
+}
+function hideTip(){ smartTip.classList.remove('show'); }
+Object.keys(tooltipContent).forEach(id=>{
+  const stub = document.getElementById(id)?.closest('.stub');
+  if(!stub) return;
+  stub.addEventListener('mouseenter', ()=>{
+    const c = tooltipContent[id]();
+    showTip(stub, `<div class="tt-row"><span class="tt-label">${c.title}</span></div><div class="tt-note">${c.note}</div>`);
+  });
+  stub.addEventListener('mouseleave', hideTip);
+});
+document.querySelectorAll('.panel h3').forEach(h=>{
+  h.addEventListener('mouseenter', ()=> showTip(h, `<div class="tt-note">اضغط على أي عنصر داخل الرسم البياني لتصفية اللوحة بأكملها بحسب هذا العنصر.</div>`));
+  h.addEventListener('mouseleave', hideTip);
+});
+
+// ---------- 8) Drill-down navigation on charts ----------
+function drillSet(id, value){ const el = document.getElementById(id); if(el){ el.value = value; render(); } }
+chartBranch.options.onClick = (evt, els)=>{ if(els.length){ drillSet('fBranch', chartBranch.data.labels[els[0].index]); } };
+chartStatus.options.onClick = (evt, els)=>{
+  if(!els.length) return;
+  const label = chartStatus.data.labels[els[0].index];
+  const rawKey = Object.keys(STATUS_MAP).find(k=> (STATUS_MAP[k].label===label)) || label;
+  drillSet('fStatus', rawKey);
+};
+chartBearer.options.onClick = (evt, els)=>{ if(els.length){ drillSet('fBearer', chartBearer.data.labels[els[0].index]); } };
+chartReviewResult.options.onClick = (evt, els)=>{ if(els.length){ drillSet('fReviewResult', chartReviewResult.data.labels[els[0].index]); } };
+chartType.options.onClick = (evt, els)=>{
+  if(!els.length) return;
+  const label = chartType.data.labels[els[0].index];
+  document.getElementById('fSearch').value = label;
+  render();
+};
+chartClassification.options.onClick = (evt, els)=>{
+  if(!els.length) return;
+  const label = chartClassification.data.labels[els[0].index];
+  document.getElementById('fSearch').value = label;
+  render();
+};
+[chartBranch, chartStatus, chartBearer, chartReviewResult, chartType, chartClassification].forEach(c=>{
+  c.canvas.style.cursor = 'pointer';
+});
+
+// ---------- 9) Footer live info ----------
+function updateFooterInfo(){
+  document.getElementById('footRecordCount').textContent = DATA.length.toLocaleString('en-US');
+  document.getElementById('footLastUpdate').textContent = dates.length ? dates[dates.length-1] : '—';
+  document.getElementById('headerLastUpdate').textContent = dates.length ? dates[dates.length-1] : '—';
+}
+updateFooterInfo();
+
+// ---------- 9b) Header action cluster (branding refresh) ----------
+document.getElementById('headerExport')?.addEventListener('click', ()=>{
+  document.getElementById('qaExport').click();
+});
+document.getElementById('headerSettings')?.addEventListener('click', ()=>{
+  openSettingsModal();
+});
+
+// ---------- 11) Performance: lazy/chunked table rendering for large datasets ----------
+const TABLE_CHUNK = 150;
+let tableRenderedCount = 0;
+let tableRowsCache = [];
+const _originalUpdateTable = updateTable;
+updateTable = function(rows){
+  const sorted = [...rows].sort((a,b)=>{
+    let va = a[sortKey], vb = b[sortKey];
+    if(sortKey==='compensation_amount'){ va = va||0; vb = vb||0; }
+    else { va = (va||'').toString(); vb = (vb||'').toString(); }
+    if(va < vb) return -1*sortDir;
+    if(va > vb) return 1*sortDir;
+    return 0;
+  });
+  tableRowsCache = sorted;
+  tableRenderedCount = 0;
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = '';
+  if(!sorted.length){
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="9">لا توجد نتائج مطابقة لعوامل التصفية الحالية</td></tr>`;
+    return;
+  }
+  appendTableChunk();
+};
+function appendTableChunk(){
+  const tbody = document.getElementById('tableBody');
+  const next = tableRowsCache.slice(tableRenderedCount, tableRenderedCount+TABLE_CHUNK);
+  if(!next.length) return;
+  const html = next.map(d=>`
+    <tr data-idx="${DATA.indexOf(d)}">
+      <td class="id-cell">${d.id ?? ''}</td>
+      <td class="num">${d.date_added ?? '—'}</td>
+      <td>${d.owner ?? ''}</td>
+      <td>${d.complainant ?? ''}</td>
+      <td>${(d.type||'').replace('شكوى تخص ','')}</td>
+      <td>${d.branch ?? ''}</td>
+      <td class="content-cell" title="${(d.content||'').replace(/"/g,'&quot;')}">${d.content ?? ''}</td>
+      <td>${statusBadge(d.status)}</td>
+      <td class="amount-cell">${typeof d.compensation_amount==='number' ? d.compensation_amount.toLocaleString('en-US') : '—'}</td>
+    </tr>
+  `).join('');
+  tbody.insertAdjacentHTML('beforeend', html);
+  tbody.querySelectorAll('tr[data-idx]').forEach(tr=>{
+    if(!tr._bound){ tr._bound = true; tr.addEventListener('click', ()=> openModal(DATA[+tr.dataset.idx])); }
+  });
+  tableRenderedCount += next.length;
+}
+document.querySelector('.table-scroll').addEventListener('scroll', function(){
+  if(this.scrollTop + this.clientHeight >= this.scrollHeight - 80){ appendTableChunk(); }
+});
+
+// =========================================================
+// 12) LIVE DATA: Google Apps Script API integration
+//     Loading / No Data / Connection Error states + retry
+//     Settings (API_URL) persisted via localStorage
+//     Auto-refresh every 60s — never reloads the page
+// =========================================================
+
+const API_URL = "https://script.google.com/macros/s/AKfycbzkMVR_si8K6AIPbdEc45PVGTyoeWjeN4lSE64K699P8BEqi7-zFfodM8sb-jGV-Zbr/exec"; // Google Apps Script API endpoint
+const API_URL_STORAGE_KEY = 'arrive_dashboard_api_url';
+const CACHE_DATA_STORAGE_KEY = 'arrive_dashboard_last_data';
+const CACHE_TIME_STORAGE_KEY = 'arrive_dashboard_last_data_time';
+const AUTO_REFRESH_STORAGE_KEY = 'arrive_dashboard_auto_refresh_minutes';
+let currentApiUrl = API_URL;
+let autoRefreshMinutes = 1; // default matches previous fixed 60s behavior
+let autoRefreshTimer = null;
+
+function loadApiUrlFromStorage(){
+  try{
+    const stored = localStorage.getItem(API_URL_STORAGE_KEY);
+    currentApiUrl = (stored && stored.trim()) ? stored.trim() : API_URL;
+  }catch(e){ currentApiUrl = API_URL; }
+}
+function saveApiUrlToStorage(url){
+  currentApiUrl = (url||'').trim();
+  try{ localStorage.setItem(API_URL_STORAGE_KEY, currentApiUrl); }catch(e){}
+}
+
+// ---------- Cache of last successful API response (localStorage) ----------
+function saveDataToCache(rows){
+  try{
+    localStorage.setItem(CACHE_DATA_STORAGE_KEY, JSON.stringify(rows));
+    localStorage.setItem(CACHE_TIME_STORAGE_KEY, String(Date.now()));
+  }catch(e){ /* storage full/unavailable — non-fatal, live view still works */ }
+}
+function loadDataFromCache(){
+  try{
+    const raw = localStorage.getItem(CACHE_DATA_STORAGE_KEY);
+    if(!raw) return null;
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : null;
+  }catch(e){ return null; }
+}
+function getCacheTimeLabel(){
+  try{
+    const t = localStorage.getItem(CACHE_TIME_STORAGE_KEY);
+    if(!t) return '';
+    return new Date(parseInt(t,10)).toLocaleString('ar-EG');
+  }catch(e){ return ''; }
+}
+
+// ---------- Auto-refresh interval (Off / 1 / 5 / 15 / 30 minutes), persisted in localStorage ----------
+function loadAutoRefreshFromStorage(){
+  try{
+    const v = localStorage.getItem(AUTO_REFRESH_STORAGE_KEY);
+    autoRefreshMinutes = (v === null) ? 1 : parseInt(v, 10);
+    if(isNaN(autoRefreshMinutes)) autoRefreshMinutes = 1;
+  }catch(e){ autoRefreshMinutes = 1; }
+}
+function saveAutoRefreshToStorage(minutes){
+  autoRefreshMinutes = minutes;
+  try{ localStorage.setItem(AUTO_REFRESH_STORAGE_KEY, String(minutes)); }catch(e){}
+}
+function setupAutoRefresh(){
+  if(autoRefreshTimer){ clearInterval(autoRefreshTimer); autoRefreshTimer = null; }
+  if(autoRefreshMinutes > 0){
+    autoRefreshTimer = setInterval(()=>{ loadDashboardData({ isRefresh: true }); }, autoRefreshMinutes * 60000);
+  }
+}
+
+// ---------- Loading skeleton (brief, non-blocking — dashboard is always rendered right after) ----------
+function showSkeleton(){
+  document.getElementById('pageSkeleton')?.classList.remove('hidden');
+}
+function hideSkeleton(){
+  document.getElementById('pageSkeleton')?.classList.add('hidden');
+}
+// The dashboard is always visible immediately — with demo data, live data, or the last good
+// data — and is never blocked behind a full-screen error/setup page. There is no full-page
+// blocking overlay in this file at all (element removed); only small non-blocking banners
+// (demo-mode banner / refresh banner) are ever used to communicate connection state.
+
+// ---------- Header connection-status chip (display only — reflects existing state, no logic change) ----------
+const connStatusChip = document.getElementById('connStatusChip');
+const connStatusLabel = document.getElementById('connStatusLabel');
+function setConnStatus(state){
+  if(!connStatusChip) return;
+  connStatusChip.dataset.state = state;
+  const labels = { live:'🟢 متصل', demo:'🟡 وضع تجريبي', error:'🔴 غير متصل' };
+  if(connStatusLabel) connStatusLabel.textContent = labels[state] || labels.live;
+}
+
+// ---------- Demo-mode banner (non-blocking) ----------
+const demoModeBanner = document.getElementById('demoModeBanner');
+function showDemoModeBanner(){ demoModeBanner?.classList.remove('hidden'); setConnStatus('demo'); }
+function hideDemoModeBanner(){ demoModeBanner?.classList.add('hidden'); setConnStatus('live'); }
+
+// ---------- Slim non-blocking banner for connection problems (initial load + background refresh) ----------
+const refreshBanner = document.getElementById('refreshBanner');
+const refreshBannerMsg = document.getElementById('refreshBannerMsg');
+function showRefreshBanner(kind){
+  if(!refreshBanner) return;
+  const presets = {
+    'error': 'تعذّر الاتصال بالخادم — سيتم الاحتفاظ بآخر بيانات متاحة. اضغط "إعادة المحاولة الآن" أو تحقق من رابط الـ API من الإعدادات.',
+    'empty': 'تم الاتصال بالخادم بنجاح، ولكن لم يتم العثور على أي سجلات.',
+  };
+  refreshBannerMsg.textContent = presets[kind] || presets['error'];
+  refreshBanner.classList.remove('hidden');
+  if(kind === 'error') setConnStatus('error');
+}
+function hideRefreshBanner(){ refreshBanner?.classList.add('hidden'); }
+
+// ---------- Settings modal (API URL) — always reachable, never disabled ----------
+function openSettingsModal(){
+  const input = document.getElementById('settingsApiUrlInput');
+  if(input) input.value = currentApiUrl || '';
+  const warning = document.getElementById('settingsUrlWarning');
+  if(warning) warning.classList.toggle('show', !currentApiUrl);
+  const autoSel = document.getElementById('autoRefreshSelect');
+  if(autoSel) autoSel.value = String(autoRefreshMinutes);
+  const cacheNote = document.getElementById('lastCacheNote');
+  if(cacheNote){
+    const t = getCacheTimeLabel();
+    cacheNote.textContent = t ? ('آخر بيانات محفوظة محليًا: ' + t) : 'لا توجد بيانات محفوظة محليًا بعد.';
+  }
+  document.getElementById('settingsOverlay')?.classList.add('open');
+}
+function closeSettingsModal(){
+  document.getElementById('settingsOverlay')?.classList.remove('open');
+}
+document.getElementById('settingsClose')?.addEventListener('click', closeSettingsModal);
+document.getElementById('settingsOverlay')?.addEventListener('click', (e)=>{
+  if(e.target.id === 'settingsOverlay') closeSettingsModal();
+});
+document.getElementById('settingsSaveBtn')?.addEventListener('click', ()=>{
+  const input = document.getElementById('settingsApiUrlInput');
+  saveApiUrlToStorage(input ? input.value : '');
+  closeSettingsModal();
+  loadDashboardData({ isRefresh: false });
+});
+document.getElementById('headerSettings')?.addEventListener('click', openSettingsModal);
+document.getElementById('demoModeSettingsBtn')?.addEventListener('click', openSettingsModal);
+document.getElementById('refreshBannerRetryBtn')?.addEventListener('click', ()=>{
+  loadDashboardData({ isRefresh: true, manual: true });
+});
+document.getElementById('autoRefreshSelect')?.addEventListener('change', (e)=>{
+  saveAutoRefreshToStorage(parseInt(e.target.value, 10) || 0);
+  setupAutoRefresh();
+});
+document.getElementById('refreshNowBtn')?.addEventListener('click', ()=>{
+  loadDashboardData({ isRefresh: true, manual: true });
+});
+
+// ---------- Arabic API field mapping ----------
+// The Google Apps Script API returns rows keyed by Arabic sheet-column headers.
+// This layer converts those keys into the internal field names buildData()/render()/
+// the charts/filters already use. No KPI, chart, or filter logic is touched —
+// only the incoming row shape is translated before it reaches buildData().
+const ARABIC_FIELD_MAP = {
+  'مسؤول الشكوى': 'owner',
+  'رقم الشكوى': 'id',
+  'الشاكي': 'complainant',
+  'رقم البوليصة': 'policy',
+  'المحتوى': 'content',
+  'نوع الشكوى': 'type',
+  'تاريخ الأضافة': 'date_added',
+  'الفرع المتسبب': 'branch',
+  'تصنيف المشكلة': 'classification',
+  'اسم المخطىء': 'faulty_person',
+  'وظيفة المخطىء': 'faulty_person_job',
+  'نتيجة التحقيق': 'investigation_result',
+  'حالة الشكوى الحاليه': 'status',
+  'مبلغ التعويض المستحق': 'compensation_amount',
+  'رقم بوليصه التعويض': 'compensation_policy',
+  'sla': 'sla_days'
+};
+const ARABIC_MONTHS = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+function monthNameFromDate(dateStr){
+  if(!dateStr) return '';
+  const m = String(dateStr).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(!m) return '';
+  const idx = parseInt(m[2],10) - 1;
+  return ARABIC_MONTHS[idx] || '';
+}
+function toNumberOrNull(v){
+  if(v === null || v === undefined || v === '') return null;
+  if(typeof v === 'number') return isFinite(v) ? v : null;
+  const cleaned = String(v).replace(/,/g,'').trim();
+  if(cleaned === '') return null;
+  const n = parseFloat(cleaned);
+  return isNaN(n) ? null : n;
+}
+// Converts one raw API record (Arabic keys) into the internal record shape.
+// Unmapped/extra keys are preserved as-is so nothing is silently dropped.
+function mapApiRecord(row){
+  if(!row || typeof row !== 'object') return null;
+  const out = { ...row };
+  Object.keys(ARABIC_FIELD_MAP).forEach(arKey=>{
+    if(Object.prototype.hasOwnProperty.call(row, arKey)){
+      out[ARABIC_FIELD_MAP[arKey]] = row[arKey];
+    }
+  });
+  out.date_added = normDate(out.date_added);
+  out.compensation_amount = toNumberOrNull(out.compensation_amount);
+  out.sla_days = toNumberOrNull(out.sla_days);
+  if(out.id !== undefined && out.id !== null) out.id = String(out.id).trim();
+  if(!out.month) out.month = monthNameFromDate(out.date_added);
+  return out;
+}
+function mapApiRows(rows){
+  return (Array.isArray(rows) ? rows : []).map(mapApiRecord).filter(Boolean);
+}
+
+// ---------- Fetch ----------
+async function fetchDashboardData(){
+  let res;
+  try{
+    const controller = new AbortController();
+    const timeoutId = setTimeout(()=>controller.abort(), 120000); // allow up to 2 minutes for slow formula-driven sheets
+    try{
+      res = await fetch(currentApiUrl, { method:'GET', cache:'no-store', signal: controller.signal });
+    }finally{
+      clearTimeout(timeoutId);
+    }
+  }catch(networkErr){
+    const err = new Error('network'); err.kind = 'error'; throw err;
+  }
+  if(!res.ok){
+    const err = new Error('http-'+res.status); err.kind = 'error'; throw err;
+  }
+  let json;
+  try{
+    const rawText = (await res.text()).replace(/^\uFEFF/, '').trim();
+    json = JSON.parse(rawText);
+  }catch(parseErr){
+    const err = new Error('bad-json'); err.kind = 'error'; throw err;
+  }
+  const rows = Array.isArray(json) ? json : (json && Array.isArray(json.data) ? json.data : null);
+  if(!rows){
+    const err = new Error('bad-format'); err.kind = 'error'; throw err;
+  }
+  return mapApiRows(rows);
+}
+
+function renderDataset(raw){
+  DATA = buildData(raw);
+  populateFilters();
+  updateMetaBar();
+  drawBarcodes();
+  updateFooterInfo();
+  render();
+}
+
+// Loads the embedded demo dataset. Always succeeds synchronously — the dashboard is
+// never left blocked while no API URL is configured.
+function loadDemoData(){
+  renderDataset(DEMO_DATA);
+  showDemoModeBanner();
+  hideRefreshBanner();
+}
+
+let hasLiveDataOnce = false;
+let isLoadingData = false;
+
+async function loadDashboardData(opts){
+  opts = opts || {};
+  const isRefresh = !!opts.isRefresh;
+
+  // No API URL configured: always fall back to (or stay on) demo data. Never blocks.
+  if(!currentApiUrl){
+    if(!hasLiveDataOnce){
+      try{ loadDemoData(); }
+      catch(e){ console.error('Demo data render failed:', e); }
+    }
+    hideSkeleton();
+    return;
+  }
+
+  // On the very first load with an API URL configured, render any cached last-good data
+  // immediately so the dashboard is never blank while the live fetch is in flight.
+  if(!isRefresh && !hasLiveDataOnce && DATA.length === 0){
+    const cached = loadDataFromCache();
+    if(cached && cached.length){
+      try{ renderDataset(cached); }catch(e){ console.error('Cached data render failed:', e); }
+    }
+  }
+
+  if(isLoadingData && !opts.manual) return;
+  isLoadingData = true;
+  if(!isRefresh){ showSkeleton(); }
+
+  try{
+    const raw = await fetchDashboardData();
+
+    if(!raw.length){
+      showRefreshBanner('empty');
+    }else{
+      renderDataset(raw);
+      hideDemoModeBanner();
+      hideRefreshBanner();
+      hasLiveDataOnce = true;
+      saveDataToCache(raw);
+    }
+  }catch(err){
+    // Keep whatever is currently on screen (demo data, cached data, or last good live data)
+    // and just surface a small, non-blocking notification with a retry option. If we have
+    // no data on screen at all yet, fall back to the local cache before giving up to demo view.
+    if(DATA.length === 0){
+      const cached = loadDataFromCache();
+      if(cached && cached.length){
+        try{ renderDataset(cached); }catch(e){ console.error('Cached data render failed:', e); }
+        showRefreshBanner('error');
+      }else{
+        // No live data and nothing cached — automatically fall back to Demo Mode
+        // so the dashboard is never left blank when the API is unreachable.
+        try{ loadDemoData(); }catch(e){ console.error('Demo data render failed:', e); }
+      }
+    }else{
+      showRefreshBanner('error');
+    }
+  }finally{
+    hideSkeleton();
+    isLoadingData = false;
+  }
+}
+
+// ---------- Header current-date chip (display only) ----------
+(function initHeaderCurrentDate(){
+  const el = document.getElementById('headerCurrentDate');
+  if(!el) return;
+  el.textContent = new Date().toLocaleDateString('ar-EG', { day:'2-digit', month:'2-digit', year:'numeric' });
+})();
+
+// ---------- Boot + auto-refresh (data only — the page itself is never reloaded, never blocked) ----------
+loadApiUrlFromStorage();
+loadAutoRefreshFromStorage();
+loadDashboardData({ isRefresh: false });
+setupAutoRefresh();
+</script>
+</body>
+</html>
