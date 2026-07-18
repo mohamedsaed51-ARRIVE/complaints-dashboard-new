@@ -86,6 +86,16 @@
     background-image: repeating-linear-gradient(90deg, rgba(255,255,255,0.035) 0 1px, transparent 1px 34px);
     pointer-events:none;
   }
+  header.top::after{
+    content:"";
+    position:absolute; inset:0;
+    background-image: url('logo.png');
+    background-repeat:no-repeat;
+    background-position: right 20px center;
+    background-size: 260px;
+    opacity:0.10;
+    pointer-events:none;
+  }
   .top-row{ display:flex; align-items:flex-end; justify-content:space-between; gap:24px; flex-wrap:wrap; position:relative; z-index:1;}
   .brand-eyebrow{
     font-family:'IBM Plex Mono', monospace; direction:ltr; unicode-bidi:isolate;
