@@ -3355,7 +3355,7 @@ async function fetchDashboardData(){
   let res;
   try{
     const controller = new AbortController();
-    const timeoutId = setTimeout(()=>controller.abort(), 15000); // never hang forever
+    const timeoutId = setTimeout(()=>controller.abort(), 60000); // allow time for large sheet responses
     try{
       res = await fetch(currentApiUrl, { method:'GET', cache:'no-store', signal: controller.signal });
     }finally{
