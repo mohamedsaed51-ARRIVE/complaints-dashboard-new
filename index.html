@@ -74,10 +74,7 @@
 
   /* ---------- Header ---------- */
   header.top{
-    background: linear-gradient(180deg, rgba(24,38,51,0.88) 0%, rgba(44,66,87,0.88) 100%), url('logo.png');
-    background-repeat: no-repeat;
-    background-size: cover;
-    background-position: center;
+    background: linear-gradient(180deg, var(--navy-deep) 0%, var(--navy) 100%);
     color:#F3F1E9;
     padding:26px 40px 22px;
     position:relative;
@@ -3305,19 +3302,26 @@ document.getElementById('refreshNowBtn')?.addEventListener('click', ()=>{
 const ARABIC_FIELD_MAP = {
   'مسؤول الشكوى': 'owner',
   'رقم الشكوى': 'id',
+  'الأدمن': 'admin',
   'الشاكي': 'complainant',
   'رقم البوليصة': 'policy',
   'المحتوى': 'content',
   'نوع الشكوى': 'type',
   'تاريخ الأضافة': 'date_added',
+  'الشهر': 'month',
   'الفرع المتسبب': 'branch',
   'تصنيف المشكلة': 'classification',
   'اسم المخطىء': 'faulty_person',
   'وظيفة المخطىء': 'faulty_person_job',
   'نتيجة التحقيق': 'investigation_result',
   'حالة الشكوى الحاليه': 'status',
+  'التأكيد على المراجعه': 'confirm_review',
+  'تارخ المراجعه': 'review_date',
   'مبلغ التعويض المستحق': 'compensation_amount',
+  'وظيفه المتحمل': 'compensation_bearer',
+  'نتيجه مراجعة التعويض': 'compensation_review_result',
   'رقم بوليصه التعويض': 'compensation_policy',
+  'ملاحظات': 'notes',
   'sla': 'sla_days'
 };
 const ARABIC_MONTHS = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
