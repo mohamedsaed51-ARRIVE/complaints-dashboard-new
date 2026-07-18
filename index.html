@@ -120,11 +120,15 @@
     font-family:inherit;
     font-size:13px;
     color:var(--ink);
-    min-width:130px;
+    width:160px;
+    max-width:160px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
     cursor:pointer;
     transition: border-color .15s ease, box-shadow .15s ease;
   }
-  .filter-bar input[type=text]{ cursor:text; min-width:200px; }
+  .filter-bar input[type=text]{ cursor:text; width:220px; max-width:220px; }
   .filter-bar select:hover, .filter-bar input[type=text]:hover{ border-color:var(--navy); }
   .filter-bar select:focus, .filter-bar input[type=text]:focus{
     outline:none; border-color:var(--navy); box-shadow:0 0 0 3px rgba(44,66,87,0.12);
