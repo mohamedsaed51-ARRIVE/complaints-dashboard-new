@@ -74,7 +74,10 @@
 
   /* ---------- Header ---------- */
   header.top{
-    background: linear-gradient(180deg, var(--navy-deep) 0%, var(--navy) 100%);
+    background: linear-gradient(180deg, rgba(24,38,51,0.88) 0%, rgba(44,66,87,0.88) 100%), url('logo.png');
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
     color:#F3F1E9;
     padding:26px 40px 22px;
     position:relative;
@@ -84,16 +87,6 @@
     content:"";
     position:absolute; inset:0;
     background-image: repeating-linear-gradient(90deg, rgba(255,255,255,0.035) 0 1px, transparent 1px 34px);
-    pointer-events:none;
-  }
-  header.top::after{
-    content:"";
-    position:absolute; inset:0;
-    background-image: url('logo.png');
-    background-repeat:no-repeat;
-    background-position: right 20px center;
-    background-size: 260px;
-    opacity:0.10;
     pointer-events:none;
   }
   .top-row{ display:flex; align-items:flex-end; justify-content:space-between; gap:24px; flex-wrap:wrap; position:relative; z-index:1;}
