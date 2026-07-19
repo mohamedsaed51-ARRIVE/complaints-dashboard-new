@@ -64,6 +64,7 @@
     font-size:14px;
     line-height:1.5;
     min-height:100vh;
+    overflow-x:hidden;
     background-image:
       radial-gradient(circle at 100% 0%, rgba(44,66,87,0.04), transparent 45%),
       radial-gradient(circle at 0% 100%, rgba(169,131,46,0.05), transparent 40%);
@@ -102,7 +103,6 @@
 
   /* ---------- Filter bar ---------- */
   .filter-bar{
-    position:sticky; top:0; z-index:40;
     background:var(--surface);
     border-bottom:1px solid var(--line);
     box-shadow: var(--shadow);
@@ -906,6 +906,28 @@
     .health-score-panel{ flex-direction:column; align-items:flex-start; }
     .exec-snapshot-panel{ padding:16px; }
     .snap-stats{ gap:16px; }
+  }
+
+  /* ---- Filter bar: full-width stacked fields on phones ---- */
+  @media (max-width: 700px){
+    .filter-bar{ flex-direction:column; align-items:stretch; gap:12px; }
+    .filter-bar .fgroup{ width:100%; }
+    .filter-bar select,
+    .filter-bar input[type=text],
+    .filter-bar input[type=date]{
+      width:100%; max-width:100%; min-width:0; box-sizing:border-box;
+    }
+    .filter-spacer{ display:none; }
+    .filter-divider{ margin:0; }
+    .filter-bar .result-count{ width:100%; text-align:center; }
+    .filter-bar .btn-reset{ width:100%; align-self:stretch; }
+  }
+
+  /* ---- General small-screen overflow safety ---- */
+  @media (max-width: 480px){
+    .hs-factor-row{ grid-template-columns:100px 1fr 40px; gap:6px; font-size:10.5px; }
+    .top-meta{ gap:12px; }
+    .snap-stats{ gap:12px; }
   }
 </style>
 </head>
