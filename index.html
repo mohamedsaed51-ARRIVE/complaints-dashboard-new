@@ -1046,10 +1046,6 @@
     <input type="date" id="fDateTo">
   </div>
   <div class="fgroup">
-    <label for="fYearMonth">Month</label>
-    <select id="fYearMonth"><option value="">All Months</option></select>
-  </div>
-  <div class="fgroup">
     <label for="fSearch">بحث (اسم، بوليصة، محتوى)</label>
     <input type="text" id="fSearch" placeholder="اكتب للبحث…">
   </div>
@@ -1456,41 +1452,6 @@ let months = [];
 let dates = [];
 let reviewDates = [];
 
-// English month names used to label the "Month" (Year-Month) filter, e.g. "January 2026".
-const EN_MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-
-// Builds the sorted (newest → oldest) list of unique "YYYY-MM" keys present in the
-// current DATA, derived straight from each record's complaint date (date_added).
-function uniqueYearMonths(){
-  const keys = new Set();
-  DATA.forEach(d=>{
-    if(d.date_added && /^\d{4}-\d{2}/.test(d.date_added)){
-      keys.add(d.date_added.slice(0,7)); // "YYYY-MM"
-    }
-  });
-  return [...keys].sort((a,b)=> b.localeCompare(a)); // newest -> oldest
-}
-function yearMonthLabel(key){
-  const [y, m] = key.split('-');
-  const idx = parseInt(m, 10) - 1;
-  return `${EN_MONTH_NAMES[idx] || m} ${y}`;
-}
-// Fills the #fYearMonth dropdown with the current unique Year-Month values,
-// preserving the current selection when it still exists in the new data.
-function populateYearMonthFilter(){
-  const sel = document.getElementById('fYearMonth');
-  const previous = sel.value;
-  while(sel.options.length > 1){ sel.remove(1); }
-  uniqueYearMonths().forEach(key=>{
-    const opt = document.createElement('option');
-    opt.value = key; opt.textContent = yearMonthLabel(key);
-    sel.appendChild(opt);
-  });
-  if(previous && [...sel.options].some(o=>o.value === previous)){
-    sel.value = previous;
-  }
-}
-
 // Populates filter dropdowns from current DATA. Safe to call again after a
 // refresh — selections are preserved where the value still exists.
 function populateFilters(){
@@ -1515,8 +1476,6 @@ function populateFilters(){
     }
   });
 
-  // New "Month" (Year-Month) dropdown — refreshed every time DATA reloads (e.g. from Google Sheets).
-  populateYearMonthFilter();
 }
 
 // Updates the header meta bar / date-range inputs from current DATA. Safe to
@@ -1660,7 +1619,6 @@ function getFiltered(){
   const sender = document.getElementById('fSender').value;
   const dateFrom = document.getElementById('fDateFrom').value;
   const dateTo = document.getElementById('fDateTo').value;
-  const yearMonth = document.getElementById('fYearMonth').value; // "" = All Months (disabled)
   const search = document.getElementById('fSearch').value.trim().toLowerCase();
   const bearer = document.getElementById('fBearer').value;
   const reviewResult = document.getElementById('fReviewResult').value;
@@ -1677,9 +1635,6 @@ function getFiltered(){
     if(sender && d.complainant !== sender) return false;
     if(dateFrom && (!d.date_added || d.date_added < dateFrom)) return false;
     if(dateTo && (!d.date_added || d.date_added > dateTo)) return false;
-    // "Month" filter (Year-Month, e.g. "2026-01"): applied together (AND) with the
-    // Date From / Date To filters above — a record must satisfy all active date-related filters.
-    if(yearMonth && (!d.date_added || d.date_added.slice(0,7) !== yearMonth)) return false;
     if(bearer && d.compensation_bearer !== bearer) return false;
     if(reviewResult && d.compensation_review_result !== reviewResult) return false;
     if(confirm === 'yes' && !d.confirm_review) return false;
@@ -1943,7 +1898,7 @@ document.getElementById('overlay').addEventListener('click', e=>{ if(e.target.id
 document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeModal(); });
 
 // ---------- Filter events ----------
-['fOwner','fBranch','fType','fStatus','fMonth','fSender','fDateFrom','fDateTo','fYearMonth','fBearer','fReviewResult','fConfirm','fReviewFrom','fReviewTo'].forEach(id=>{
+['fOwner','fBranch','fType','fStatus','fMonth','fSender','fDateFrom','fDateTo','fBearer','fReviewResult','fConfirm','fReviewFrom','fReviewTo'].forEach(id=>{
   document.getElementById(id).addEventListener('change', render);
 });
 let searchTimer;
@@ -1952,7 +1907,7 @@ document.getElementById('fSearch').addEventListener('input', ()=>{
   searchTimer = setTimeout(render, 180);
 });
 document.getElementById('btnReset').addEventListener('click', ()=>{
-  ['fOwner','fBranch','fType','fStatus','fMonth','fSender','fDateFrom','fDateTo','fYearMonth','fBearer','fReviewResult','fConfirm','fReviewFrom','fReviewTo'].forEach(id=> document.getElementById(id).value = '');
+  ['fOwner','fBranch','fType','fStatus','fMonth','fSender','fDateFrom','fDateTo','fBearer','fReviewResult','fConfirm','fReviewFrom','fReviewTo'].forEach(id=> document.getElementById(id).value = '');
   document.getElementById('fSearch').value = '';
   extraFilter = null; extraFilterLabel = '';
   render();
@@ -3020,7 +2975,7 @@ function renderKpiEnhancements(rows){
 
 // ---------- 4) Live statistics bar ----------
 function countActiveFilters(){
-  const ids = ['fOwner','fBranch','fType','fStatus','fMonth','fSender','fDateFrom','fDateTo','fYearMonth','fSearch','fBearer','fReviewResult','fConfirm','fReviewFrom','fReviewTo'];
+  const ids = ['fOwner','fBranch','fType','fStatus','fMonth','fSender','fDateFrom','fDateTo','fSearch','fBearer','fReviewResult','fConfirm','fReviewFrom','fReviewTo'];
   let n = ids.filter(id=> document.getElementById(id).value).length;
   if(extraFilter) n += 1;
   return n;
