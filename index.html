@@ -929,6 +929,94 @@
     .top-meta{ gap:12px; }
     .snap-stats{ gap:12px; }
   }
+
+  /* ---------- Compare Mode ---------- */
+  main.hidden{ display:none; }
+  .compare-mode-section.hidden{ display:none; }
+  .compare-mode-section{ padding:30px 40px 60px; max-width:1600px; margin:0 auto; }
+  .compare-heading{ margin-bottom:16px; }
+
+  .compare-toolbar{
+    display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:10px;
+    margin-bottom:16px;
+  }
+  .compare-toolbar-actions{ display:flex; gap:10px; flex-wrap:wrap; }
+  .compare-toolbar-actions .qa-btn{
+    background:var(--surface); border:1px solid var(--line-strong); border-radius:8px;
+    padding:9px 14px; font-size:12.5px; color:var(--ink); cursor:pointer; font-family:inherit;
+    display:inline-flex; align-items:center; gap:6px; box-shadow:var(--shadow); transition:.15s ease;
+  }
+  .compare-toolbar-actions .qa-btn:hover{ border-color:var(--navy); color:var(--navy); transform:translateY(-1px); }
+  .compare-toolbar-actions #btnCloseCompare:hover{ border-color:var(--rejected); color:var(--rejected); }
+
+  .icon-btn#headerCompareToggle.active{ background:var(--gold); border-color:var(--gold); color:#1E2536; }
+
+  .compare-summary-bar{
+    display:grid; grid-template-columns:repeat(4, 1fr); gap:14px; margin-bottom:24px;
+  }
+  @media (max-width:1100px){ .compare-summary-bar{ grid-template-columns:repeat(2, 1fr); } }
+  @media (max-width:560px){ .compare-summary-bar{ grid-template-columns:1fr; } }
+  .compare-metric-card{
+    background:var(--surface); border:1px solid var(--line); border-radius:10px;
+    padding:14px 16px; box-shadow:var(--shadow);
+  }
+  .compare-metric-label{ font-size:11px; color:var(--ink-faint); font-weight:600; margin-bottom:10px; }
+  .compare-metric-values{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
+  .cmv{ display:flex; flex-direction:column; gap:2px; }
+  .cmv.right{ align-items:flex-end; text-align:left; }
+  .cmv-tag{ font-size:9.5px; color:var(--ink-faint); letter-spacing:.04em; }
+  .cmv.left .cmv-tag::before{ content:"● "; color:var(--navy); }
+  .cmv.right .cmv-tag::before{ content:"● "; color:var(--gold); }
+  .cmv-num{ font-family:'IBM Plex Mono',monospace; direction:ltr; unicode-bidi:isolate; font-size:19px; font-weight:700; color:var(--navy-deep); }
+  .compare-metric-diff{
+    display:flex; align-items:center; justify-content:space-between; font-size:11.5px;
+    padding-top:8px; border-top:1px dashed var(--line-strong); font-family:'IBM Plex Mono',monospace; direction:ltr; unicode-bidi:isolate;
+  }
+  .compare-metric-diff.good{ color:var(--accepted); }
+  .compare-metric-diff.bad{ color:var(--rejected); }
+  .compare-metric-diff.flat{ color:var(--ink-faint); }
+
+  .compare-grid{ display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:start; }
+  @media (max-width:1150px){ .compare-grid{ grid-template-columns:1fr; } }
+
+  .compare-panel{
+    background:var(--surface-alt); border:1px solid var(--line); border-radius:12px; padding:16px;
+  }
+  .compare-panel-head{ margin-bottom:12px; }
+  .compare-panel-badge{
+    display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700;
+    padding:6px 14px; border-radius:20px; color:#fff;
+  }
+  .compare-panel-badge.left{ background:var(--navy); }
+  .compare-panel-badge.right{ background:var(--gold); }
+
+  .compare-filter-bar{
+    background:var(--surface); border:1px solid var(--line); border-radius:9px;
+    padding:12px 14px; display:flex; align-items:flex-end; gap:10px; flex-wrap:wrap; margin-bottom:14px;
+  }
+  .compare-filter-bar .fgroup{ display:flex; flex-direction:column; gap:4px; }
+  .compare-filter-bar label{ font-size:10px; color:var(--ink-faint); letter-spacing:.03em; }
+  .compare-filter-bar select, .compare-filter-bar input[type=date]{
+    appearance:none; background:var(--surface-alt); border:1px solid var(--line-strong);
+    border-radius:7px; padding:7px 10px; font-family:inherit; font-size:12.5px; color:var(--ink);
+    min-width:120px; cursor:pointer;
+  }
+  .compare-filter-bar input[type=date]{ font-family:'IBM Plex Mono',monospace; direction:ltr; min-width:130px; }
+  .compare-filter-bar select:focus, .compare-filter-bar input[type=date]:focus{
+    outline:none; border-color:var(--navy); box-shadow:0 0 0 3px rgba(44,66,87,0.12);
+  }
+  .compare-result-count{ font-size:11.5px; color:var(--ink-faint); padding-bottom:8px; white-space:nowrap; }
+  .compare-result-count b{ color:var(--navy); font-family:'IBM Plex Mono',monospace; }
+
+  .compare-exec-grid{ grid-template-columns:repeat(3, 1fr); margin-bottom:14px; }
+  @media (max-width:640px){ .compare-exec-grid{ grid-template-columns:repeat(2, 1fr); } }
+
+  .compare-kpi-row{ grid-template-columns:repeat(5, 1fr); margin-bottom:14px; }
+  @media (max-width:900px){ .compare-kpi-row{ grid-template-columns:repeat(2, 1fr); } }
+
+  .compare-panel .panel-grid,
+  .compare-panel .panel-grid.thirds{ grid-template-columns:1fr; margin-bottom:14px; }
+  .compare-panel .chart-wrap{ height:220px; }
 </style>
 </head>
 <body>
@@ -984,6 +1072,9 @@
     <button class="theme-toggle" id="themeToggle" type="button">
       <span id="themeToggleIcon">🌙</span> <span id="themeToggleLabel">الوضع الداكن</span>
     </button>
+    <button class="icon-btn" id="headerCompareToggle" type="button" title="وضع المقارنة">
+      <span>⇄</span> <span id="headerCompareLabel">وضع المقارنة</span>
+    </button>
     <button class="icon-btn" id="headerSettings" type="button" title="الإعدادات">
       <span>⚙️</span> إعدادات
     </button>
@@ -1028,10 +1119,6 @@
   <div class="fgroup">
     <label for="fStatus">حالة الشكوى</label>
     <select id="fStatus"><option value="">الكل</option></select>
-  </div>
-  <div class="fgroup">
-    <label for="fMonth">الشهر</label>
-    <select id="fMonth"><option value="">الكل</option></select>
   </div>
   <div class="fgroup">
     <label for="fSender">اسم الراسل</label>
@@ -1280,6 +1367,232 @@
 
 </main>
 
+<section class="compare-mode-section hidden" id="compareModeSection">
+  <div class="section-heading compare-heading">
+    <h2><span class="tag">Compare</span> وضع المقارنة</h2>
+    <span class="section-sub">قارن بين لوحتين مستقلتين بعوامل تصفية منفصلة (التاريخ، مسؤول الشكوى، الفرع، الحالة)</span>
+  </div>
+
+  <div class="compare-toolbar">
+    <div class="compare-toolbar-actions">
+      <button class="qa-btn" id="btnSyncFilters" type="button"><span class="qa-icon">⇉</span> مزامنة عوامل التصفية (يسار ← يمين)</button>
+      <button class="qa-btn" id="btnSwapFilters" type="button"><span class="qa-icon">⇄</span> تبديل اللوحتين</button>
+      <button class="qa-btn" id="btnCloseCompare" type="button"><span class="qa-icon">✕</span> إغلاق وضع المقارنة</button>
+    </div>
+  </div>
+
+  <div class="compare-summary-bar" id="compareSummaryBar"></div>
+
+  <div class="compare-grid">
+    <div class="compare-panel" data-panel="L">
+      <div class="compare-panel-head">
+        <span class="compare-panel-badge left">اللوحة الأولى (يسار)</span>
+      </div>
+      <div class="compare-filter-bar">
+        <div class="fgroup">
+          <label for="cOwner_L">مسؤول الشكوى</label>
+          <select id="cOwner_L"><option value="">الكل</option></select>
+        </div>
+        <div class="fgroup">
+          <label for="cBranch_L">الفرع المتسبب</label>
+          <select id="cBranch_L"><option value="">الكل</option></select>
+        </div>
+        <div class="fgroup">
+          <label for="cStatus_L">حالة الشكوى</label>
+          <select id="cStatus_L"><option value="">الكل</option></select>
+        </div>
+        <div class="fgroup">
+          <label for="cDateFrom_L">تاريخ الشكوى من</label>
+          <input type="date" id="cDateFrom_L">
+        </div>
+        <div class="fgroup">
+          <label for="cDateTo_L">تاريخ الشكوى إلى</label>
+          <input type="date" id="cDateTo_L">
+        </div>
+        <div class="compare-result-count"><b id="cResultCount_L">0</b> نتيجة</div>
+      </div>
+
+      <div class="exec-core-grid compare-exec-grid" id="execCoreGrid_L"></div>
+
+      <section class="kpi-row compare-kpi-row">
+        <div class="stub">
+          <div class="stub-label">إجمالي الشكاوى</div>
+          <div class="stub-value num" id="kpiTotal_L">0</div>
+          <div class="stub-sub" id="kpiTotalSub_L">—</div>
+        </div>
+        <div class="stub accent-accepted">
+          <div class="stub-label">نسبة قبول التعويض</div>
+          <div class="stub-value num" id="kpiAcceptRate_L">0<sup>%</sup></div>
+          <div class="stub-sub" id="kpiAcceptSub_L">—</div>
+        </div>
+        <div class="stub accent-rejected">
+          <div class="stub-label">تعويضات مرفوضة</div>
+          <div class="stub-value num" id="kpiRejected_L">0</div>
+          <div class="stub-sub" id="kpiRejectedSub_L">—</div>
+        </div>
+        <div class="stub accent-pending">
+          <div class="stub-label">قيد التحقيق</div>
+          <div class="stub-value num" id="kpiPending_L">0</div>
+          <div class="stub-sub" id="kpiPendingSub_L">—</div>
+        </div>
+        <div class="stub accent-gold">
+          <div class="stub-label">متوسط زمن الحل (يوم)</div>
+          <div class="stub-value num" id="kpiSla_L">0</div>
+          <div class="stub-sub" id="kpiSlaSub_L">—</div>
+        </div>
+      </section>
+
+      <section class="panel-grid">
+        <div class="panel">
+          <h3>الاتجاه اليومي للشكاوى</h3>
+          <div class="panel-sub">عدد الشكاوى الواردة يوميًا خلال الفترة المحددة</div>
+          <div class="chart-wrap"><canvas id="chartTrend_L"></canvas></div>
+        </div>
+        <div class="panel">
+          <h3>حالة التعويض</h3>
+          <div class="panel-sub">توزيع الشكاوى حسب نتيجة المراجعة</div>
+          <div class="chart-wrap"><canvas id="chartStatus_L"></canvas></div>
+        </div>
+      </section>
+
+      <section class="panel-grid thirds">
+        <div class="panel">
+          <h3>الشكاوى حسب الفرع</h3>
+          <div class="panel-sub">أعلى 10 فروع من حيث عدد الشكاوى</div>
+          <div class="chart-wrap tall"><canvas id="chartBranch_L"></canvas></div>
+        </div>
+        <div class="panel">
+          <h3>نوع الشكوى</h3>
+          <div class="panel-sub">توزيع الشكاوى حسب نوعها الرئيسي</div>
+          <div class="chart-wrap tall"><canvas id="chartType_L"></canvas></div>
+        </div>
+        <div class="panel">
+          <h3>تصنيف المشكلة</h3>
+          <div class="panel-sub">أكثر 8 أسباب تكرارًا</div>
+          <div class="chart-wrap tall"><canvas id="chartClassification_L"></canvas></div>
+        </div>
+      </section>
+
+      <section class="panel-grid">
+        <div class="panel">
+          <h3>التعويض حسب الجهة المتحملة</h3>
+          <div class="panel-sub">إجمالي مبلغ التعويض (ج.م) وعدد الحالات لكل وظيفة متحملة</div>
+          <div class="chart-wrap"><canvas id="chartBearer_L"></canvas></div>
+        </div>
+        <div class="panel">
+          <h3>نتيجة مراجعة التعويض</h3>
+          <div class="panel-sub">توزيع الحالات حسب نتيجة المراجعة المحاسبية</div>
+          <div class="chart-wrap"><canvas id="chartReviewResult_L"></canvas></div>
+        </div>
+      </section>
+    </div>
+
+    <div class="compare-panel" data-panel="R">
+      <div class="compare-panel-head">
+        <span class="compare-panel-badge right">اللوحة الثانية (يمين)</span>
+      </div>
+      <div class="compare-filter-bar">
+        <div class="fgroup">
+          <label for="cOwner_R">مسؤول الشكوى</label>
+          <select id="cOwner_R"><option value="">الكل</option></select>
+        </div>
+        <div class="fgroup">
+          <label for="cBranch_R">الفرع المتسبب</label>
+          <select id="cBranch_R"><option value="">الكل</option></select>
+        </div>
+        <div class="fgroup">
+          <label for="cStatus_R">حالة الشكوى</label>
+          <select id="cStatus_R"><option value="">الكل</option></select>
+        </div>
+        <div class="fgroup">
+          <label for="cDateFrom_R">تاريخ الشكوى من</label>
+          <input type="date" id="cDateFrom_R">
+        </div>
+        <div class="fgroup">
+          <label for="cDateTo_R">تاريخ الشكوى إلى</label>
+          <input type="date" id="cDateTo_R">
+        </div>
+        <div class="compare-result-count"><b id="cResultCount_R">0</b> نتيجة</div>
+      </div>
+
+      <div class="exec-core-grid compare-exec-grid" id="execCoreGrid_R"></div>
+
+      <section class="kpi-row compare-kpi-row">
+        <div class="stub">
+          <div class="stub-label">إجمالي الشكاوى</div>
+          <div class="stub-value num" id="kpiTotal_R">0</div>
+          <div class="stub-sub" id="kpiTotalSub_R">—</div>
+        </div>
+        <div class="stub accent-accepted">
+          <div class="stub-label">نسبة قبول التعويض</div>
+          <div class="stub-value num" id="kpiAcceptRate_R">0<sup>%</sup></div>
+          <div class="stub-sub" id="kpiAcceptSub_R">—</div>
+        </div>
+        <div class="stub accent-rejected">
+          <div class="stub-label">تعويضات مرفوضة</div>
+          <div class="stub-value num" id="kpiRejected_R">0</div>
+          <div class="stub-sub" id="kpiRejectedSub_R">—</div>
+        </div>
+        <div class="stub accent-pending">
+          <div class="stub-label">قيد التحقيق</div>
+          <div class="stub-value num" id="kpiPending_R">0</div>
+          <div class="stub-sub" id="kpiPendingSub_R">—</div>
+        </div>
+        <div class="stub accent-gold">
+          <div class="stub-label">متوسط زمن الحل (يوم)</div>
+          <div class="stub-value num" id="kpiSla_R">0</div>
+          <div class="stub-sub" id="kpiSlaSub_R">—</div>
+        </div>
+      </section>
+
+      <section class="panel-grid">
+        <div class="panel">
+          <h3>الاتجاه اليومي للشكاوى</h3>
+          <div class="panel-sub">عدد الشكاوى الواردة يوميًا خلال الفترة المحددة</div>
+          <div class="chart-wrap"><canvas id="chartTrend_R"></canvas></div>
+        </div>
+        <div class="panel">
+          <h3>حالة التعويض</h3>
+          <div class="panel-sub">توزيع الشكاوى حسب نتيجة المراجعة</div>
+          <div class="chart-wrap"><canvas id="chartStatus_R"></canvas></div>
+        </div>
+      </section>
+
+      <section class="panel-grid thirds">
+        <div class="panel">
+          <h3>الشكاوى حسب الفرع</h3>
+          <div class="panel-sub">أعلى 10 فروع من حيث عدد الشكاوى</div>
+          <div class="chart-wrap tall"><canvas id="chartBranch_R"></canvas></div>
+        </div>
+        <div class="panel">
+          <h3>نوع الشكوى</h3>
+          <div class="panel-sub">توزيع الشكاوى حسب نوعها الرئيسي</div>
+          <div class="chart-wrap tall"><canvas id="chartType_R"></canvas></div>
+        </div>
+        <div class="panel">
+          <h3>تصنيف المشكلة</h3>
+          <div class="panel-sub">أكثر 8 أسباب تكرارًا</div>
+          <div class="chart-wrap tall"><canvas id="chartClassification_R"></canvas></div>
+        </div>
+      </section>
+
+      <section class="panel-grid">
+        <div class="panel">
+          <h3>التعويض حسب الجهة المتحملة</h3>
+          <div class="panel-sub">إجمالي مبلغ التعويض (ج.م) وعدد الحالات لكل وظيفة متحملة</div>
+          <div class="chart-wrap"><canvas id="chartBearer_R"></canvas></div>
+        </div>
+        <div class="panel">
+          <h3>نتيجة مراجعة التعويض</h3>
+          <div class="panel-sub">توزيع الحالات حسب نتيجة المراجعة المحاسبية</div>
+          <div class="chart-wrap"><canvas id="chartReviewResult_R"></canvas></div>
+        </div>
+      </section>
+    </div>
+
+  </div>
+</section>
+
 <footer class="enterprise-footer">
   <div class="footer-brand-row">
     <div class="footer-mark" aria-hidden="true">
@@ -1455,7 +1768,7 @@ let reviewDates = [];
 // Populates filter dropdowns from current DATA. Safe to call again after a
 // refresh — selections are preserved where the value still exists.
 function populateFilters(){
-  const selectIds = ['fOwner','fBranch','fType','fStatus','fBearer','fReviewResult','fSender','fMonth'];
+  const selectIds = ['fOwner','fBranch','fType','fStatus','fBearer','fReviewResult','fSender'];
   const previousValues = {};
   selectIds.forEach(id=>{ previousValues[id] = document.getElementById(id).value; });
 
@@ -1467,7 +1780,6 @@ function populateFilters(){
   fillSelect('fReviewResult', uniqueSorted('compensation_review_result'));
   fillSelect('fSender', uniqueSorted('complainant'));
   months = uniqueSorted('month').sort((a,b)=> monthOrder.indexOf(a)-monthOrder.indexOf(b));
-  fillSelect('fMonth', months);
 
   selectIds.forEach(id=>{
     const sel = document.getElementById(id);
@@ -1615,7 +1927,6 @@ function getFiltered(){
   const branch = document.getElementById('fBranch').value;
   const type = document.getElementById('fType').value;
   const status = document.getElementById('fStatus').value;
-  const month = document.getElementById('fMonth').value;
   const sender = document.getElementById('fSender').value;
   const dateFrom = document.getElementById('fDateFrom').value;
   const dateTo = document.getElementById('fDateTo').value;
@@ -1631,7 +1942,6 @@ function getFiltered(){
     if(branch && d.branch !== branch) return false;
     if(type && d.type !== type) return false;
     if(status && d.status !== status) return false;
-    if(month && d.month !== month) return false;
     if(sender && d.complainant !== sender) return false;
     if(dateFrom && (!d.date_added || d.date_added < dateFrom)) return false;
     if(dateTo && (!d.date_added || d.date_added > dateTo)) return false;
@@ -1898,7 +2208,7 @@ document.getElementById('overlay').addEventListener('click', e=>{ if(e.target.id
 document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeModal(); });
 
 // ---------- Filter events ----------
-['fOwner','fBranch','fType','fStatus','fMonth','fSender','fDateFrom','fDateTo','fBearer','fReviewResult','fConfirm','fReviewFrom','fReviewTo'].forEach(id=>{
+['fOwner','fBranch','fType','fStatus','fSender','fDateFrom','fDateTo','fBearer','fReviewResult','fConfirm','fReviewFrom','fReviewTo'].forEach(id=>{
   document.getElementById(id).addEventListener('change', render);
 });
 let searchTimer;
@@ -1907,7 +2217,7 @@ document.getElementById('fSearch').addEventListener('input', ()=>{
   searchTimer = setTimeout(render, 180);
 });
 document.getElementById('btnReset').addEventListener('click', ()=>{
-  ['fOwner','fBranch','fType','fStatus','fMonth','fSender','fDateFrom','fDateTo','fBearer','fReviewResult','fConfirm','fReviewFrom','fReviewTo'].forEach(id=> document.getElementById(id).value = '');
+  ['fOwner','fBranch','fType','fStatus','fSender','fDateFrom','fDateTo','fBearer','fReviewResult','fConfirm','fReviewFrom','fReviewTo'].forEach(id=> document.getElementById(id).value = '');
   document.getElementById('fSearch').value = '';
   extraFilter = null; extraFilterLabel = '';
   render();
@@ -2107,8 +2417,8 @@ function computeCoreExecutiveMetrics(rows){
   return { total, open, closed, slaCompliance, avgResolution, totalComp, closureRate, avgComp, avgPerHandler };
 }
 
-function renderCoreExecutiveMetrics(rows){
-  const grid = document.getElementById('execCoreGrid');
+function renderCoreExecutiveMetrics(rows, gridId='execCoreGrid'){
+  const grid = document.getElementById(gridId);
   if(!grid) return;
   if(!rows.length){
     grid.innerHTML = `<div class="exec-reco-empty">لا توجد بيانات كافية ضمن عوامل التصفية الحالية لعرض الملخص التنفيذي.</div>`;
@@ -2975,7 +3285,7 @@ function renderKpiEnhancements(rows){
 
 // ---------- 4) Live statistics bar ----------
 function countActiveFilters(){
-  const ids = ['fOwner','fBranch','fType','fStatus','fMonth','fSender','fDateFrom','fDateTo','fSearch','fBearer','fReviewResult','fConfirm','fReviewFrom','fReviewTo'];
+  const ids = ['fOwner','fBranch','fType','fStatus','fSender','fDateFrom','fDateTo','fSearch','fBearer','fReviewResult','fConfirm','fReviewFrom','fReviewTo'];
   let n = ids.filter(id=> document.getElementById(id).value).length;
   if(extraFilter) n += 1;
   return n;
@@ -3422,6 +3732,8 @@ function renderDataset(raw){
   drawBarcodes();
   updateFooterInfo();
   render();
+  if(typeof populateCompareFilters === 'function') populateCompareFilters();
+  if(compareModeActive && typeof renderComparePanels === 'function') renderComparePanels();
 }
 
 // Loads the embedded demo dataset. Always succeeds synchronously — the dashboard is
@@ -3496,6 +3808,344 @@ async function loadDashboardData(opts){
     isLoadingData = false;
   }
 }
+
+// ===================== Compare Mode =====================
+// Fully additive: does not alter any existing function, chart, KPI, or
+// calculation used by the main dashboard. Reuses palette/STATUS_MAP and the
+// same Chart.js configs as makeCharts()/updateCharts() so visuals match
+// exactly, but on independent canvases/state for two side-by-side panels.
+
+let compareModeActive = false;
+let compareChartsInitialized = false;
+const compareCharts = { L:{}, R:{} };
+
+function buildCompareChartSet(suf){
+  const set = {};
+
+  set.trend = new Chart(document.getElementById('chartTrend_'+suf), {
+    type:'line',
+    data:{ labels:[], datasets:[{ data:[], borderColor:palette.navy, backgroundColor:'rgba(44,66,87,0.08)', fill:true, tension:.3, pointRadius:2, pointBackgroundColor:palette.navy, borderWidth:2 }]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{ rtl:true, titleFont:{family:"'IBM Plex Mono',monospace"} } },
+      scales:{ x:{ grid:{display:false}, ticks:{maxRotation:0, autoSkip:true, maxTicksLimit:8} }, y:{ beginAtZero:true, grid:{color:'#EEEDE6'}, ticks:{precision:0} } }
+    }
+  });
+
+  set.status = new Chart(document.getElementById('chartStatus_'+suf), {
+    type:'doughnut',
+    data:{ labels:[], datasets:[{ data:[], backgroundColor:[], borderWidth:3, borderColor:'#fff' }]},
+    options:{
+      responsive:true, maintainAspectRatio:false, cutout:'62%',
+      plugins:{ legend:{ position:'bottom', rtl:true, labels:{ usePointStyle:true, boxWidth:8, padding:10, font:{size:10.5} } } }
+    }
+  });
+
+  set.branch = new Chart(document.getElementById('chartBranch_'+suf), {
+    type:'bar',
+    data:{ labels:[], datasets:[{ data:[], backgroundColor:palette.navy, borderRadius:4, maxBarThickness:14 }]},
+    options:{
+      indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false} },
+      scales:{ x:{ beginAtZero:true, grid:{color:'#EEEDE6'}, ticks:{precision:0} }, y:{ grid:{display:false}, ticks:{font:{size:10.5}} } }
+    }
+  });
+
+  set.type = new Chart(document.getElementById('chartType_'+suf), {
+    type:'bar',
+    data:{ labels:[], datasets:[{ data:[], backgroundColor:palette.gold, borderRadius:4, maxBarThickness:22 }]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false} },
+      scales:{ x:{ grid:{display:false}, ticks:{ autoSkip:false, maxRotation:30, minRotation:0, font:{size:9.5} } }, y:{ beginAtZero:true, grid:{color:'#EEEDE6'}, ticks:{precision:0} } }
+    }
+  });
+
+  set.classification = new Chart(document.getElementById('chartClassification_'+suf), {
+    type:'bar',
+    data:{ labels:[], datasets:[{ data:[], backgroundColor:palette.accepted, borderRadius:4, maxBarThickness:14 }]},
+    options:{
+      indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false} },
+      scales:{ x:{ beginAtZero:true, grid:{color:'#EEEDE6'}, ticks:{precision:0} }, y:{ grid:{display:false}, ticks:{font:{size:10.5}} } }
+    }
+  });
+
+  set.bearer = new Chart(document.getElementById('chartBearer_'+suf), {
+    type:'bar',
+    data:{ labels:[], datasets:[
+      { label:'إجمالي التعويض (ج.م)', data:[], backgroundColor:palette.gold, borderRadius:4, maxBarThickness:18, yAxisID:'y' },
+      { label:'عدد الحالات', data:[], backgroundColor:'rgba(44,66,87,0.35)', borderRadius:4, maxBarThickness:18, yAxisID:'y1' }
+    ]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ position:'bottom', rtl:true, labels:{ usePointStyle:true, boxWidth:8, padding:10, font:{size:10.5} } } },
+      scales:{
+        x:{ grid:{display:false} },
+        y:{ position:'left', beginAtZero:true, grid:{color:'#EEEDE6'}, title:{display:true, text:'ج.م', font:{size:10}} },
+        y1:{ position:'right', beginAtZero:true, grid:{display:false}, ticks:{precision:0}, title:{display:true, text:'حالات', font:{size:10}} }
+      }
+    }
+  });
+
+  set.reviewResult = new Chart(document.getElementById('chartReviewResult_'+suf), {
+    type:'doughnut',
+    data:{ labels:[], datasets:[{ data:[], backgroundColor:palette.soft, borderWidth:3, borderColor:'#fff' }]},
+    options:{
+      responsive:true, maintainAspectRatio:false, cutout:'62%',
+      plugins:{ legend:{ position:'bottom', rtl:true, labels:{ usePointStyle:true, boxWidth:8, padding:10, font:{size:10.5} } } }
+    }
+  });
+
+  return set;
+}
+
+function initCompareCharts(){
+  if(compareChartsInitialized) return;
+  compareCharts.L = buildCompareChartSet('L');
+  compareCharts.R = buildCompareChartSet('R');
+  compareChartsInitialized = true;
+}
+
+function updateCompareChartSet(set, rows){
+  // trend
+  const byDate = {};
+  rows.forEach(d=>{ if(d.date_added){ byDate[d.date_added] = (byDate[d.date_added]||0)+1; } });
+  const dateKeys = Object.keys(byDate).sort();
+  set.trend.data.labels = dateKeys.map(d=>d.slice(5));
+  set.trend.data.datasets[0].data = dateKeys.map(d=>byDate[d]);
+  set.trend.update();
+
+  // status
+  const statusCounts = {};
+  rows.forEach(d=>{ statusCounts[d.status] = (statusCounts[d.status]||0)+1; });
+  const sLabels = Object.keys(statusCounts);
+  set.status.data.labels = sLabels.map(s => STATUS_MAP[s] ? STATUS_MAP[s].label : s);
+  set.status.data.datasets[0].data = sLabels.map(s=>statusCounts[s]);
+  set.status.data.datasets[0].backgroundColor = sLabels.map(s=>{
+    const c = STATUS_MAP[s] ? STATUS_MAP[s].cls : 'neutral';
+    return {accepted:palette.accepted, rejected:palette.rejected, pending:palette.pending, neutral:palette.neutral}[c];
+  });
+  set.status.update();
+
+  // branch top 10
+  const branchTop = topN(rows, 'branch', 10);
+  set.branch.data.labels = branchTop.map(x=>x[0]);
+  set.branch.data.datasets[0].data = branchTop.map(x=>x[1]);
+  set.branch.update();
+
+  // type
+  const typeTop = topN(rows, 'type', 8);
+  set.type.data.labels = typeTop.map(x=>x[0].replace('شكوى تخص ',''));
+  set.type.data.datasets[0].data = typeTop.map(x=>x[1]);
+  set.type.update();
+
+  // classification
+  const classTop = topN(rows, 'classification', 8);
+  set.classification.data.labels = classTop.map(x=>x[0]);
+  set.classification.data.datasets[0].data = classTop.map(x=>x[1]);
+  set.classification.update();
+
+  // compensation by bearer (amount + count)
+  const bearerAgg = {};
+  rows.forEach(d=>{
+    if(!d.compensation_bearer) return;
+    if(!bearerAgg[d.compensation_bearer]) bearerAgg[d.compensation_bearer] = {amount:0, count:0};
+    bearerAgg[d.compensation_bearer].count += 1;
+    if(typeof d.compensation_amount === 'number') bearerAgg[d.compensation_bearer].amount += d.compensation_amount;
+  });
+  const bearerEntries = Object.entries(bearerAgg).sort((a,b)=> b[1].amount - a[1].amount);
+  set.bearer.data.labels = bearerEntries.map(x=>x[0]);
+  set.bearer.data.datasets[0].data = bearerEntries.map(x=>x[1].amount);
+  set.bearer.data.datasets[1].data = bearerEntries.map(x=>x[1].count);
+  set.bearer.update();
+
+  // compensation review result
+  const reviewCounts = {};
+  rows.forEach(d=>{
+    if(!d.compensation_review_result) return;
+    reviewCounts[d.compensation_review_result] = (reviewCounts[d.compensation_review_result]||0)+1;
+  });
+  const reviewEntries = Object.entries(reviewCounts).sort((a,b)=>b[1]-a[1]);
+  set.reviewResult.data.labels = reviewEntries.map(x=>x[0]);
+  set.reviewResult.data.datasets[0].data = reviewEntries.map(x=>x[1]);
+  set.reviewResult.update();
+}
+
+// ---- Per-panel filtering (independent: Owner, Branch, Status, Date From/To) ----
+function getFilteredForPanel(suf){
+  const owner = document.getElementById('cOwner_'+suf).value;
+  const branch = document.getElementById('cBranch_'+suf).value;
+  const status = document.getElementById('cStatus_'+suf).value;
+  const dateFrom = document.getElementById('cDateFrom_'+suf).value;
+  const dateTo = document.getElementById('cDateTo_'+suf).value;
+  return DATA.filter(d=>{
+    if(owner && d.owner !== owner) return false;
+    if(branch && d.branch !== branch) return false;
+    if(status && d.status !== status) return false;
+    if(dateFrom && (!d.date_added || d.date_added < dateFrom)) return false;
+    if(dateTo && (!d.date_added || d.date_added > dateTo)) return false;
+    return true;
+  });
+}
+
+function populateCompareFilters(){
+  ['L','R'].forEach(suf=>{
+    const prevOwner = document.getElementById('cOwner_'+suf).value;
+    const prevBranch = document.getElementById('cBranch_'+suf).value;
+    const prevStatus = document.getElementById('cStatus_'+suf).value;
+    fillSelect('cOwner_'+suf, uniqueSorted('owner'));
+    fillSelect('cBranch_'+suf, uniqueSorted('branch'));
+    fillSelect('cStatus_'+suf, uniqueSorted('status'));
+    const own = document.getElementById('cOwner_'+suf);
+    const brn = document.getElementById('cBranch_'+suf);
+    const sts = document.getElementById('cStatus_'+suf);
+    if(prevOwner && [...own.options].some(o=>o.value===prevOwner)) own.value = prevOwner;
+    if(prevBranch && [...brn.options].some(o=>o.value===prevBranch)) brn.value = prevBranch;
+    if(prevStatus && [...sts.options].some(o=>o.value===prevStatus)) sts.value = prevStatus;
+  });
+}
+
+function computeCompareSummaryMetrics(rows){
+  const total = rows.length;
+  const accepted = rows.filter(d=> d.status && (d.status.includes('قبول') || d.status.includes('مسبقا'))).length;
+  const rejected = rows.filter(d=> d.status && d.status.includes('رفض')).length;
+  const decided = accepted + rejected;
+  const acceptRate = decided ? Math.round((accepted/decided)*100) : 0;
+  const slaVals = rows.map(d=>d.sla_days).filter(v=> typeof v === 'number');
+  const avgSla = slaVals.length ? (slaVals.reduce((a,b)=>a+b,0)/slaVals.length) : 0;
+  const compSum = rows.reduce((s,d)=> s + (typeof d.compensation_amount==='number'?d.compensation_amount:0), 0);
+  return { total, acceptRate, avgSla, compSum };
+}
+
+function renderCompareSummary(rowsL, rowsR){
+  const bar = document.getElementById('compareSummaryBar');
+  if(!bar) return;
+  const mL = computeCompareSummaryMetrics(rowsL);
+  const mR = computeCompareSummaryMetrics(rowsR);
+  const metrics = [
+    { key:'total', label:'إجمالي الشكاوى', fmt:v=>Math.round(v).toLocaleString('en-US'), lowerIsBetter:true },
+    { key:'acceptRate', label:'نسبة قبول التعويض', fmt:v=>`${Math.round(v)}%`, lowerIsBetter:false },
+    { key:'avgSla', label:'متوسط زمن الحل (يوم)', fmt:v=>v.toFixed(1), lowerIsBetter:true },
+    { key:'compSum', label:'إجمالي التعويضات (ج.م)', fmt:v=>Math.round(v).toLocaleString('en-US'), lowerIsBetter:true },
+  ];
+  bar.innerHTML = metrics.map(m=>{
+    const l = mL[m.key], r = mR[m.key];
+    const diff = r - l;
+    const diffPct = l !== 0 ? (diff/l*100) : (r!==0 ? 100 : 0);
+    const better = m.lowerIsBetter ? diff < 0 : diff > 0;
+    const diffClass = diff===0 ? 'flat' : (better ? 'good' : 'bad');
+    const sign = diff>0 ? '+' : (diff<0 ? '-' : '');
+    return `
+      <div class="compare-metric-card">
+        <div class="compare-metric-label">${m.label}</div>
+        <div class="compare-metric-values">
+          <div class="cmv left"><span class="cmv-tag">يسار</span><span class="cmv-num">${m.fmt(l)}</span></div>
+          <div class="cmv right"><span class="cmv-tag">يمين</span><span class="cmv-num">${m.fmt(r)}</span></div>
+        </div>
+        <div class="compare-metric-diff ${diffClass}">
+          <span>الفرق: ${sign}${m.fmt(Math.abs(diff))}</span>
+          <span class="cmd-pct">${sign}${Math.abs(diffPct).toFixed(1)}%</span>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function setCompareText(id, val){
+  const el = document.getElementById(id);
+  if(el) el.textContent = val;
+}
+function setCompareHtml(id, val){
+  const el = document.getElementById(id);
+  if(el) el.innerHTML = val;
+}
+
+function renderComparePanel(suf, rows){
+  setCompareText('cResultCount_'+suf, rows.length);
+
+  const total = rows.length;
+  const accepted = rows.filter(d=> d.status && (d.status.includes('قبول') || d.status.includes('مسبقا'))).length;
+  const rejected = rows.filter(d=> d.status && d.status.includes('رفض')).length;
+  const pending = rows.filter(d=> d.status && (d.status.includes('جارى') || d.status.includes('التحقيق'))).length;
+  const decided = accepted + rejected;
+  const acceptRate = decided ? Math.round((accepted/decided)*100) : 0;
+  const slaVals = rows.map(d=>d.sla_days).filter(v=> typeof v === 'number');
+  const avgSla = slaVals.length ? (slaVals.reduce((a,b)=>a+b,0)/slaVals.length) : 0;
+  const compSum = rows.reduce((s,d)=> s + (typeof d.compensation_amount==='number'?d.compensation_amount:0), 0);
+
+  setCompareText('kpiTotal_'+suf, total.toLocaleString('en-US'));
+  setCompareText('kpiTotalSub_'+suf, `${uniqueVals(rows,'branch').length} فرعًا · ${uniqueVals(rows,'owner').length} مسؤول`);
+  setCompareHtml('kpiAcceptRate_'+suf, `${acceptRate}<sup>%</sup>`);
+  setCompareText('kpiAcceptSub_'+suf, `${accepted} حالة من أصل ${decided} تم البتّ فيها`);
+  setCompareText('kpiRejected_'+suf, rejected.toLocaleString('en-US'));
+  setCompareText('kpiRejectedSub_'+suf, decided ? `${Math.round((rejected/decided)*100)}% من الحالات المقررة` : '—');
+  setCompareText('kpiPending_'+suf, pending.toLocaleString('en-US'));
+  setCompareText('kpiPendingSub_'+suf, `من أصل ${total} شكوى`);
+  setCompareText('kpiSla_'+suf, avgSla.toFixed(1));
+  setCompareText('kpiSlaSub_'+suf, `إجمالي التعويض ${compSum.toLocaleString('en-US')} ج.م`);
+
+  renderCoreExecutiveMetrics(rows, 'execCoreGrid_'+suf);
+  updateCompareChartSet(compareCharts[suf], rows);
+}
+
+function renderComparePanels(){
+  if(!compareModeActive || !compareChartsInitialized) return;
+  const rowsL = getFilteredForPanel('L');
+  const rowsR = getFilteredForPanel('R');
+  renderComparePanel('L', rowsL);
+  renderComparePanel('R', rowsR);
+  renderCompareSummary(rowsL, rowsR);
+}
+
+function toggleCompareMode(){
+  compareModeActive = !compareModeActive;
+  const section = document.getElementById('compareModeSection');
+  const mainEl = document.querySelector('main');
+  const toggleBtn = document.getElementById('headerCompareToggle');
+  const toggleLabel = document.getElementById('headerCompareLabel');
+  if(compareModeActive){
+    populateCompareFilters();
+    mainEl.classList.add('hidden');
+    section.classList.remove('hidden');
+    toggleBtn.classList.add('active');
+    if(toggleLabel) toggleLabel.textContent = 'إغلاق وضع المقارنة';
+    // Defer chart creation until canvases are visible/have real layout size.
+    requestAnimationFrame(()=>{
+      initCompareCharts();
+      renderComparePanels();
+    });
+  }else{
+    section.classList.add('hidden');
+    mainEl.classList.remove('hidden');
+    toggleBtn.classList.remove('active');
+    if(toggleLabel) toggleLabel.textContent = 'وضع المقارنة';
+  }
+}
+
+document.getElementById('headerCompareToggle').addEventListener('click', toggleCompareMode);
+document.getElementById('btnCloseCompare').addEventListener('click', ()=>{ if(compareModeActive) toggleCompareMode(); });
+
+['cOwner_L','cBranch_L','cStatus_L','cDateFrom_L','cDateTo_L','cOwner_R','cBranch_R','cStatus_R','cDateFrom_R','cDateTo_R'].forEach(id=>{
+  document.getElementById(id).addEventListener('change', renderComparePanels);
+});
+
+document.getElementById('btnSyncFilters').addEventListener('click', ()=>{
+  ['cOwner','cBranch','cStatus','cDateFrom','cDateTo'].forEach(prefix=>{
+    document.getElementById(prefix+'_R').value = document.getElementById(prefix+'_L').value;
+  });
+  renderComparePanels();
+});
+
+document.getElementById('btnSwapFilters').addEventListener('click', ()=>{
+  ['cOwner','cBranch','cStatus','cDateFrom','cDateTo'].forEach(prefix=>{
+    const l = document.getElementById(prefix+'_L');
+    const r = document.getElementById(prefix+'_R');
+    const tmp = l.value; l.value = r.value; r.value = tmp;
+  });
+  renderComparePanels();
+});
+// =================== End Compare Mode ===================
+
 
 // ---------- Header current-date chip (display only) ----------
 (function initHeaderCurrentDate(){
