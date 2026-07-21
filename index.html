@@ -1121,6 +1121,10 @@
     <select id="fStatus"><option value="">الكل</option></select>
   </div>
   <div class="fgroup">
+    <label for="fMonth">الشهر</label>
+    <select id="fMonth"><option value="">الكل</option></select>
+  </div>
+  <div class="fgroup">
     <label for="fSender">اسم الراسل</label>
     <select id="fSender"><option value="">الكل</option></select>
   </div>
@@ -1768,7 +1772,7 @@ let reviewDates = [];
 // Populates filter dropdowns from current DATA. Safe to call again after a
 // refresh — selections are preserved where the value still exists.
 function populateFilters(){
-  const selectIds = ['fOwner','fBranch','fType','fStatus','fBearer','fReviewResult','fSender'];
+  const selectIds = ['fOwner','fBranch','fType','fStatus','fBearer','fReviewResult','fSender','fMonth'];
   const previousValues = {};
   selectIds.forEach(id=>{ previousValues[id] = document.getElementById(id).value; });
 
@@ -1780,6 +1784,7 @@ function populateFilters(){
   fillSelect('fReviewResult', uniqueSorted('compensation_review_result'));
   fillSelect('fSender', uniqueSorted('complainant'));
   months = uniqueSorted('month').sort((a,b)=> monthOrder.indexOf(a)-monthOrder.indexOf(b));
+  fillSelect('fMonth', months);
 
   selectIds.forEach(id=>{
     const sel = document.getElementById(id);
@@ -1927,6 +1932,7 @@ function getFiltered(){
   const branch = document.getElementById('fBranch').value;
   const type = document.getElementById('fType').value;
   const status = document.getElementById('fStatus').value;
+  const month = document.getElementById('fMonth').value;
   const sender = document.getElementById('fSender').value;
   const dateFrom = document.getElementById('fDateFrom').value;
   const dateTo = document.getElementById('fDateTo').value;
@@ -1942,6 +1948,7 @@ function getFiltered(){
     if(branch && d.branch !== branch) return false;
     if(type && d.type !== type) return false;
     if(status && d.status !== status) return false;
+    if(month && d.month !== month) return false;
     if(sender && d.complainant !== sender) return false;
     if(dateFrom && (!d.date_added || d.date_added < dateFrom)) return false;
     if(dateTo && (!d.date_added || d.date_added > dateTo)) return false;
@@ -2208,7 +2215,7 @@ document.getElementById('overlay').addEventListener('click', e=>{ if(e.target.id
 document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeModal(); });
 
 // ---------- Filter events ----------
-['fOwner','fBranch','fType','fStatus','fSender','fDateFrom','fDateTo','fBearer','fReviewResult','fConfirm','fReviewFrom','fReviewTo'].forEach(id=>{
+['fOwner','fBranch','fType','fStatus','fMonth','fSender','fDateFrom','fDateTo','fBearer','fReviewResult','fConfirm','fReviewFrom','fReviewTo'].forEach(id=>{
   document.getElementById(id).addEventListener('change', render);
 });
 let searchTimer;
@@ -2217,7 +2224,7 @@ document.getElementById('fSearch').addEventListener('input', ()=>{
   searchTimer = setTimeout(render, 180);
 });
 document.getElementById('btnReset').addEventListener('click', ()=>{
-  ['fOwner','fBranch','fType','fStatus','fSender','fDateFrom','fDateTo','fBearer','fReviewResult','fConfirm','fReviewFrom','fReviewTo'].forEach(id=> document.getElementById(id).value = '');
+  ['fOwner','fBranch','fType','fStatus','fMonth','fSender','fDateFrom','fDateTo','fBearer','fReviewResult','fConfirm','fReviewFrom','fReviewTo'].forEach(id=> document.getElementById(id).value = '');
   document.getElementById('fSearch').value = '';
   extraFilter = null; extraFilterLabel = '';
   render();
@@ -3285,7 +3292,7 @@ function renderKpiEnhancements(rows){
 
 // ---------- 4) Live statistics bar ----------
 function countActiveFilters(){
-  const ids = ['fOwner','fBranch','fType','fStatus','fSender','fDateFrom','fDateTo','fSearch','fBearer','fReviewResult','fConfirm','fReviewFrom','fReviewTo'];
+  const ids = ['fOwner','fBranch','fType','fStatus','fMonth','fSender','fDateFrom','fDateTo','fSearch','fBearer','fReviewResult','fConfirm','fReviewFrom','fReviewTo'];
   let n = ids.filter(id=> document.getElementById(id).value).length;
   if(extraFilter) n += 1;
   return n;
